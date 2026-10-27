@@ -61,12 +61,12 @@ const DEMOS = [
     ],
   },
   {
-    filiere: 'FCGE',
+    filiere: 'FC',
     tags: ['tva', 'facturation'],
     title: 'Comment retrouver la TVA d’une facture de 590 000 F TTC ?',
-    author: 'marie.fcge · BTS 2',
+    author: 'marie.fc · BTS 2',
     answers: [
-      { who: 'ibrahim.fcge', badge: '', text: 'HT = 590 000 / 1,18 = 500 000 F, donc TVA = 90 000 F.' },
+      { who: 'ibrahim.fc', badge: '', text: 'HT = 590 000 / 1,18 = 500 000 F, donc TVA = 90 000 F.' },
       { who: 'Prof. Diallo', badge: 'Prof', text: 'Bien. Taux normal de 18 %, vérifie les exonérations.' },
     ],
   },
@@ -282,7 +282,7 @@ export function Landing() {
               ))}
             </h1>
             <p className="hero-fade mt-6 max-w-xl text-lg text-ink-500">
-              IDA, RIT, Compta, Gestion commerciale, Logistique… STOUDENT réunit étudiants et
+              RIT, IDA, ELT, SEI, MSP, Finance Comptabilité… STOUDENT réunit étudiants et
               professeurs de <b className="font-semibold text-ink-900">toutes les filières du BTS</b> pour
               poser des questions et partager des méthodes. Gratuitement.
             </p>

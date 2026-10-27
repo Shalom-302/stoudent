@@ -67,8 +67,8 @@ const EXAMPLES = [
     ],
   },
   {
-    code: 'FCGE',
-    name: 'Finance Comptabilité et Gestion des Entreprises',
+    code: 'FC',
+    name: 'Finance Comptabilité',
     subjects: [
       {
         name: 'Comptabilité générale',
@@ -154,7 +154,7 @@ export function ExampleQuestions() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-ink-400">
-            Exemples illustratifs. Et aussi : Gestion commerciale, RH, Logistique, Assistanat, Électrotechnique…
+            Exemples illustratifs. Et aussi : ELT, SEI, MSP, Gestion commerciale, Logistique…
           </p>
           <Link
             href={`/questions?filiere=${encodeURIComponent(filiere.code)}`}

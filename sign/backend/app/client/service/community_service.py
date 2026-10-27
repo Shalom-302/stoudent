@@ -36,7 +36,7 @@ VIEW_WINDOW_SECONDS = 3600
 
 # Shown in the filters before the community has created its own.
 # The BTS filières STOUDENT opens with (codes; names live in client/lib/community.ts).
-DEFAULT_FILIERES = ['IDA', 'RIT', 'FCGE', 'GC', 'RHC', 'LOG', 'AD', 'ELT']
+DEFAULT_FILIERES = ['RIT', 'IDA', 'ELT', 'SEI', 'MSP', 'FC', 'GC', 'RHC', 'LOG', 'AD']
 
 def _excerpt(text: str) -> str:
     flat = ' '.join(text.split())

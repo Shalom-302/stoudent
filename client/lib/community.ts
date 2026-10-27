@@ -6,14 +6,16 @@
  * still type a filière missing from this list.
  */
 export const BTS_FILIERES = [
-  { code: 'IDA', name: 'Informatique Développeur d’Application' },
   { code: 'RIT', name: 'Réseaux Informatiques et Télécommunications' },
-  { code: 'FCGE', name: 'Finance Comptabilité et Gestion des Entreprises' },
+  { code: 'IDA', name: 'Informatique Développeur d’Application' },
+  { code: 'ELT', name: 'Électrotechnique' },
+  { code: 'SEI', name: 'Systèmes Électroniques et Informatiques' },
+  { code: 'MSP', name: 'Maintenance des Systèmes de Production' },
+  { code: 'FC', name: 'Finance Comptabilité' },
   { code: 'GC', name: 'Gestion Commerciale' },
   { code: 'RHC', name: 'Ressources Humaines et Communication' },
   { code: 'LOG', name: 'Logistique' },
   { code: 'AD', name: 'Assistanat de Direction' },
-  { code: 'ELT', name: 'Électrotechnique' },
 ] as const;
 
 export const FILIERES: string[] = BTS_FILIERES.map((f) => f.code);

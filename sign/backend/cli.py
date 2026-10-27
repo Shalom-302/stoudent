@@ -14,7 +14,7 @@ import argparse
 import asyncio
 
 
-async def create_admin(email: str, password: str) -> int:
+async def create_admin(email: str, password: str, pseudo: str | None = None) -> int:
     """Create an admin user (idempotent) so you can log into Swagger."""
     from backend.app.admin.schema.user import UserRegister
     from backend.common.enums import Role as RoleEnum
@@ -37,7 +37,13 @@ async def create_admin(email: str, password: str) -> int:
 
         # Explicitly an administrator: user_dao.add() defaults to the plain
         # 'user' role so the public registration endpoint cannot mint admins.
-        await user_dao.add(db, UserRegister(email=email, password=password), role=RoleEnum.ADMIN.value)
+        if pseudo and await user_dao.get_by_pseudo(db, pseudo) is not None:
+            print(f"[error] The pseudo {pseudo} is already taken.")
+            return 1
+        # The pseudo is the name shown on the answers the admin posts.
+        await user_dao.add(
+            db, UserRegister(email=email, password=password, pseudo=pseudo), role=RoleEnum.ADMIN.value
+        )
         await db.commit()
 
     print(f"[ok] Admin user created: {email}")
@@ -61,6 +67,16 @@ def storage_init() -> int:
     return 0
 
 
+async def seed_demo(password: str | None) -> int:
+    """Demo accounts (one per filière) and their questions. Idempotent."""
+    import secrets
+
+    from backend.seeder.demo import seed
+
+    # Nobody needs to sign in as a demo student: a random password is enough.
+    return await seed(password or f"Demo-{secrets.token_urlsafe(12)}")
+
+
 async def seed_labs() -> int:
     """Seed the lab catalogue (labs, experiments, badges). Idempotent."""
     from backend.seeder.signallab import seed
@@ -77,8 +93,14 @@ def main() -> int:
     ca = sub.add_parser("create-admin", help="Create an admin user")
     ca.add_argument("--email", required=True, help="Admin email (login).")
     ca.add_argument("--password", required=True, help="Admin password.")
+    ca.add_argument("--pseudo", help="Public name shown on the admin's answers.")
 
     sub.add_parser("storage-init", help="Ensure the object-storage bucket exists")
+
+    sd = sub.add_parser(
+        "seed-demo", help="Create demo students (one per filière) and their questions"
+    )
+    sd.add_argument("--password", help="Password for the demo accounts (random if omitted).")
 
     sub.add_parser(
         "seed-labs", help="Seed the lab catalogue (labs, experiments, badges)"
@@ -86,9 +108,11 @@ def main() -> int:
 
     args = parser.parse_args()
     if args.command == "create-admin":
-        return asyncio.run(create_admin(args.email, args.password))
+        return asyncio.run(create_admin(args.email, args.password, args.pseudo))
     if args.command == "storage-init":
         return storage_init()
+    if args.command == "seed-demo":
+        return asyncio.run(seed_demo(args.password))
     if args.command == "seed-labs":
         return asyncio.run(seed_labs())
     return 1

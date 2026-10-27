@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </h1>
           <p className="mt-5 max-w-md text-lg text-white/70">
             STOUDENT réunit les étudiants et les professeurs de toutes les filières du BTS (IDA, RIT,
-            FCGE, Gestion commerciale, Logistique…) pour s’entraider, gratuitement.
+            ELT, SEI, MSP, Finance Comptabilité…) pour s’entraider, gratuitement.
           </p>
           <ul className="mt-10 space-y-4">
             {POINTS.map((p) => (
