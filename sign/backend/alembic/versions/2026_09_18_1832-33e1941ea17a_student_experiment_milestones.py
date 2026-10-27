@@ -27,6 +27,12 @@ def upgrade() -> None:
     was already applied to the dev database when autogenerate ran, so it saw no
     difference to describe.
     """
+    # On a fresh database this table does not exist yet: create_all builds it
+    # at startup (after the migrations), already with this column. Same when the
+    # column is already there (dev databases where it was applied by hand).
+    inspector = sa.inspect(op.get_bind())
+    if not inspector.has_table('student_experiment') or 'milestones' in {c['name'] for c in inspector.get_columns('student_experiment')}:
+        return
     op.add_column(
         'student_experiment',
         sa.Column(
