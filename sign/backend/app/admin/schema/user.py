@@ -150,6 +150,21 @@ class ResendOtpParam(SchemaBase):
     _norm = field_validator('phone')(normalize_phone)
 
 
+class ForgotPasswordParam(SchemaBase):
+    phone: str
+
+    _norm = field_validator('phone')(normalize_phone)
+
+
+class ResetPasswordParam(SchemaBase):
+    phone: str
+    code: str = Field(min_length=4, max_length=8)
+    new_password: str = Field(min_length=1, max_length=settings.PASSWORD_MAX_LENGTH)
+
+    _norm = field_validator('phone')(normalize_phone)
+    _check_password = field_validator('new_password')(validate_password_strength)
+
+
 class UserUpdate(UserBase):
     pass
 

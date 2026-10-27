@@ -1,3 +1,4 @@
+import secrets
 from datetime import timedelta
 
 import bcrypt
@@ -79,7 +80,10 @@ async def create_access_token(sub: str, multi_login: bool) -> AccessToken:
 
     # 'type' is defence in depth: the refresh token also lives in Redis under a
     # different prefix, but a claim makes the two impossible to confuse.
-    to_encode = {'exp': expire, 'sub': sub, 'iat': timezone.now(), 'type': 'access'}
+    # 'jti' makes every token unique: two tokens minted for the same user in the
+    # same second were byte-identical, so rotating or revoking one (the Redis
+    # key is the token itself) silently killed the other session too.
+    to_encode = {'exp': expire, 'sub': sub, 'iat': timezone.now(), 'type': 'access', 'jti': secrets.token_hex(8)}
     access_token = jwt.encode(
         to_encode, settings.TOKEN_SECRET_KEY, algorithm=settings.TOKEN_ALGORITHM
     )
@@ -104,7 +108,7 @@ async def create_refresh_token(sub: str, multi_login: bool) -> RefreshToken:
     expire = timezone.now() + timedelta(seconds=settings.TOKEN_REFRESH_EXPIRE_SECONDS)
     expire_seconds = settings.TOKEN_REFRESH_EXPIRE_SECONDS
 
-    to_encode = {'exp': expire, 'sub': sub, 'iat': timezone.now(), 'type': 'refresh'}
+    to_encode = {'exp': expire, 'sub': sub, 'iat': timezone.now(), 'type': 'refresh', 'jti': secrets.token_hex(8)}
     refresh_token = jwt.encode(
         to_encode, settings.TOKEN_SECRET_KEY, algorithm=settings.TOKEN_ALGORITHM
     )
@@ -118,7 +122,7 @@ async def create_refresh_token(sub: str, multi_login: bool) -> RefreshToken:
     return RefreshToken(refresh_token=refresh_token, refresh_token_expire_time=expire)
 
 
-async def create_new_token(sub: str, token: str, refresh_token: str, multi_login: bool) -> NewToken:
+async def create_new_token(sub: str, token: str | None, refresh_token: str, multi_login: bool) -> NewToken:
     """
     Generate new token
 
@@ -135,9 +139,11 @@ async def create_new_token(sub: str, token: str, refresh_token: str, multi_login
     new_access_token = await create_access_token(sub, multi_login)
     new_refresh_token = await create_refresh_token(sub, multi_login)
 
-    token_key = f'{settings.TOKEN_REDIS_PREFIX}:{sub}:{token}'
+    # ``token`` is absent when the browser comes back with only the refresh
+    # cookie (access token expired and dropped): nothing to revoke then.
+    if token:
+        await redis_client.delete(f'{settings.TOKEN_REDIS_PREFIX}:{sub}:{token}')
     refresh_token_key = f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{sub}:{refresh_token}'
-    await redis_client.delete(token_key)
     await redis_client.delete(refresh_token_key)
     return NewToken(
         new_access_token=new_access_token.access_token,

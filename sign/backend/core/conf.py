@@ -94,7 +94,11 @@ class Settings(BaseSettings):
     # Token
     TOKEN_ALGORITHM: str = 'HS256'
     TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 1  # access token lifetime
-    TOKEN_REFRESH_EXPIRE_SECONDS: int = 60 * 60 * 24 * 7  # refresh token lifetime
+    # STOUDENT keeps members signed in: the refresh token is rotated on every
+    # use, so this is the idle limit, not a hard one (60 days without a visit).
+    TOKEN_REFRESH_EXPIRE_SECONDS: int = 60 * 60 * 24 * 60  # refresh token lifetime
+    # One session per device: signing in on the phone must not sign the laptop out.
+    TOKEN_MULTI_LOGIN: bool = True
     TOKEN_REDIS_PREFIX: str = 'sign:token'
     USER_SECURE_TOKEN_REDIS_PREFIX: str = 'sign:user:token'
     ADMIN_SECURE_TOKEN_REDIS_PREFIX: str = 'sign:admin:token'
@@ -109,6 +113,8 @@ class Settings(BaseSettings):
         f'{FASTAPI_API_V1_PATH}/auth/refresh',
         f'{FASTAPI_API_V1_PATH}/auth/verify-otp',
         f'{FASTAPI_API_V1_PATH}/auth/resend-otp',
+        f'{FASTAPI_API_V1_PATH}/auth/forgot-password',
+        f'{FASTAPI_API_V1_PATH}/auth/reset-password',
     ]
 
     # JWT

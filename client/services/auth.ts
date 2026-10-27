@@ -1,4 +1,4 @@
-import { api, setToken } from '@/lib/api';
+import { api, forgetSession, setToken } from '@/lib/api';
 import type { AuthUser, LoginToken, OtpRequired } from '@/types';
 
 export interface RegisterPayload {
@@ -49,6 +49,17 @@ export const authService = {
     return data;
   },
 
+  /** Always answers the same, whether the number has an account or not. */
+  forgotPassword: (phone: string) =>
+    api.post<{ sent: boolean }>('/auth/forgot-password', { phone }, { retryOnExpiry: false }),
+
+  resetPassword: (phone: string, code: string, newPassword: string) =>
+    api.post<{ reset: boolean }>(
+      '/auth/reset-password',
+      { phone, code, new_password: newPassword },
+      { retryOnExpiry: false },
+    ),
+
   resendOtp: (phone: string) =>
     api.post<{ sent: boolean }>('/auth/resend-otp', { phone }, { retryOnExpiry: false }),
 
@@ -58,7 +69,7 @@ export const authService = {
     } finally {
       // Clear locally even if the server call fails: a stale token in
       // localStorage is worse than an orphaned Redis key.
-      setToken(null);
+      forgetSession();
     }
   },
 

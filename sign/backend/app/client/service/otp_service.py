@@ -20,12 +20,19 @@ from backend.database.db_redis import redis_client
 _WA_SUFFIX = '@s.whatsapp.net'
 
 
-def _key(phone: str) -> str:
-    return f'{settings.OTP_REDIS_PREFIX}:{phone}'
+# A sign-up code must never reset a password, and vice versa.
+_MESSAGES = {
+    'signup': 'STOUDENT : votre code de vérification est {code}.',
+    'reset': 'STOUDENT : votre code pour choisir un nouveau mot de passe est {code}.',
+}
 
 
-def _cooldown_key(phone: str) -> str:
-    return f'{settings.OTP_REDIS_PREFIX}:cooldown:{phone}'
+def _key(phone: str, purpose: str) -> str:
+    return f'{settings.OTP_REDIS_PREFIX}:{purpose}:{phone}'
+
+
+def _cooldown_key(phone: str, purpose: str) -> str:
+    return f'{settings.OTP_REDIS_PREFIX}:cooldown:{purpose}:{phone}'
 
 
 def _phone_count_key(phone: str) -> str:
@@ -106,41 +113,41 @@ async def _send_to_any(phone: str, message: str) -> None:
 
 class OtpService:
     @staticmethod
-    async def start(phone: str) -> None:
+    async def start(phone: str, purpose: str = 'signup') -> None:
         """Generate a code, store it (TTL + fresh attempt counter), send it."""
         await _consume_phone_quota(phone)
         code = _gen_code()
         try:
-            await redis_client.hset(_key(phone), mapping={'code': code, 'attempts': 0})
-            await redis_client.expire(_key(phone), settings.OTP_TTL_SECONDS)
+            await redis_client.hset(_key(phone, purpose), mapping={'code': code, 'attempts': 0})
+            await redis_client.expire(_key(phone, purpose), settings.OTP_TTL_SECONDS)
         except Exception as exc:  # noqa: BLE001
             log.error(f'otp store failed for {phone}: {exc}')
             raise errors.ServerError(msg="Impossible de générer le code pour le moment.") from exc
         minutes = settings.OTP_TTL_SECONDS // 60
         await _send_to_any(
             phone,
-            f'STOUDENT : votre code de vérification est {code}. '
-            f'Il expire dans {minutes} minutes. Ne le partagez avec personne.',
+            _MESSAGES[purpose].format(code=code)
+            + f' Il expire dans {minutes} minutes. Ne le partagez avec personne.',
         )
 
     @staticmethod
-    async def can_resend(phone: str) -> bool:
+    async def can_resend(phone: str, purpose: str = 'signup') -> bool:
         try:
-            return not await redis_client.get(_cooldown_key(phone))
+            return not await redis_client.get(_cooldown_key(phone, purpose))
         except Exception:  # noqa: BLE001
             return True
 
     @staticmethod
-    async def mark_resent(phone: str) -> None:
+    async def mark_resent(phone: str, purpose: str = 'signup') -> None:
         try:
-            await redis_client.setex(_cooldown_key(phone), settings.OTP_RESEND_COOLDOWN_SECONDS, '1')
+            await redis_client.setex(_cooldown_key(phone, purpose), settings.OTP_RESEND_COOLDOWN_SECONDS, '1')
         except Exception:  # noqa: BLE001
             pass
 
     @staticmethod
-    async def verify(phone: str, code: str) -> bool:
+    async def verify(phone: str, code: str, purpose: str = 'signup') -> bool:
         """True if the code matches. Burns the code after too many wrong tries."""
-        key = _key(phone)
+        key = _key(phone, purpose)
         try:
             data = await redis_client.hgetall(key)
         except Exception as exc:  # noqa: BLE001

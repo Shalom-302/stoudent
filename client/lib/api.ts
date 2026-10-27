@@ -30,11 +30,31 @@ export function getToken(): string | null {
   return memoryToken;
 }
 
+/**
+ * "This browser has signed in before" - not a credential, just a hint so a
+ * visitor who never had an account does not fire a doomed /auth/refresh (and
+ * a 401 in the console) on every page load.
+ */
+const SESSION_HINT_KEY = 'stoudent.has_session';
+
 export function setToken(token: string | null) {
   memoryToken = token;
   if (typeof window === 'undefined') return;
-  if (token) window.localStorage.setItem(TOKEN_KEY, token);
-  else window.localStorage.removeItem(TOKEN_KEY);
+  if (token) {
+    window.localStorage.setItem(TOKEN_KEY, token);
+    window.localStorage.setItem(SESSION_HINT_KEY, '1');
+  } else window.localStorage.removeItem(TOKEN_KEY);
+}
+
+export function mayHaveSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(SESSION_HINT_KEY) === '1';
+}
+
+/** Explicit logout, or a refresh cookie the API refused: forget the hint. */
+export function forgetSession() {
+  setToken(null);
+  if (typeof window !== 'undefined') window.localStorage.removeItem(SESSION_HINT_KEY);
 }
 
 export class ApiError extends Error {
@@ -59,13 +79,31 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   prefix?: string;
 };
 
-async function refreshAccessToken(): Promise<boolean> {
+let refreshing: Promise<boolean> | null = null;
+
+/**
+ * Trade the httpOnly refresh cookie for a new access token. Concurrent callers
+ * share one request: the API rotates the refresh token on use, so a second
+ * parallel refresh would present an already-burnt cookie and sign the user out.
+ */
+export function refreshAccessToken(): Promise<boolean> {
+  refreshing ??= doRefresh().finally(() => {
+    refreshing = null;
+  });
+  return refreshing;
+}
+
+async function doRefresh(): Promise<boolean> {
   try {
     const response = await fetch(`${API_URL}${API_PREFIX}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
     });
-    if (!response.ok) return false;
+    if (!response.ok) {
+      // The cookie is gone or revoked: stop trying on every page load.
+      if (response.status === 401) forgetSession();
+      return false;
+    }
     const payload = (await response.json()) as ApiEnvelope<{ access_token: string }>;
     if (payload?.data?.access_token) {
       setToken(payload.data.access_token);

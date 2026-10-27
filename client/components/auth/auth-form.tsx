@@ -281,10 +281,14 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          {isRegister && (
+          {isRegister ? (
             <p className="text-xs text-ink-400">
               Au moins {MIN_PASSWORD_LENGTH} caractères, mélangeant deux types de caractères.
             </p>
+          ) : (
+            <Link href="/forgot-password" className="inline-block text-xs font-medium text-ink-900 underline underline-offset-4">
+              Mot de passe oublié ?
+            </Link>
           )}
         </div>
         {isRegister && (

@@ -8,7 +8,14 @@ from backend.crud.crud_student import student_dao
 from backend.crud.crud_user import user_dao
 from backend.models.user import User
 from backend.app.admin.schema.token import GetLoginToken, GetNewToken
-from backend.app.admin.schema.user import ResendOtpParam, UserLoginSchema, UserRegister, VerifyOtpParam
+from backend.app.admin.schema.user import (
+    ForgotPasswordParam,
+    ResendOtpParam,
+    ResetPasswordParam,
+    UserLoginSchema,
+    UserRegister,
+    VerifyOtpParam,
+)
 from backend.app.admin.service.login_log_service import LoginLogService
 from backend.common.enums import LoginLogStatusType
 from backend.common.exception import errors
@@ -16,6 +23,7 @@ from backend.common.security.jwt import (
     create_access_token,
     create_new_token,
     create_refresh_token,
+    get_hash_password,
     get_token,
     jwt_decode,
     password_verify,
@@ -109,8 +117,8 @@ class AuthService:
             user_x_id = new_user.x_id
             email = new_user.email or new_user.phone
             
-            access_token = await create_access_token(str(user_x_id), False)
-            refresh_token = await create_refresh_token(str(user_x_id), False)
+            access_token = await create_access_token(str(user_x_id), settings.TOKEN_MULTI_LOGIN)
+            refresh_token = await create_refresh_token(str(user_x_id), settings.TOKEN_MULTI_LOGIN)
 
             n_user = await user_dao.get_with_relation(db, x_id=user_x_id, populates=['roles'])
         
@@ -169,8 +177,8 @@ class AuthService:
                     raise errors.AuthorizationError(
                         msg=f'{OTP_REQUIRED_PREFIX}: compte non vérifié, entrez le code reçu par WhatsApp.')
 
-                access_token = await create_access_token(str(user_x_id), False)
-                refresh_token = await create_refresh_token(str(user_x_id), False)
+                access_token = await create_access_token(str(user_x_id), settings.TOKEN_MULTI_LOGIN)
+                refresh_token = await create_refresh_token(str(user_x_id), settings.TOKEN_MULTI_LOGIN)
 
             except errors.NotFoundError as e:
                 raise errors.NotFoundError(msg=e.msg)
@@ -234,8 +242,8 @@ class AuthService:
             user.email_verified = True
             await db.flush()
             x_id = user.x_id
-            access_token = await create_access_token(str(x_id), False)
-            refresh_token = await create_refresh_token(str(x_id), False)
+            access_token = await create_access_token(str(x_id), settings.TOKEN_MULTI_LOGIN)
+            refresh_token = await create_refresh_token(str(x_id), settings.TOKEN_MULTI_LOGIN)
             n_user = await user_dao.get_with_relation(db, x_id=x_id, populates=['roles'])
         _set_refresh_cookie(response, refresh_token.refresh_token, refresh_token.refresh_token_expire_time)
         return GetLoginToken(
@@ -260,6 +268,40 @@ class AuthService:
         return {'sent': True}
 
     @staticmethod
+    async def forgot_password(*, obj: ForgotPasswordParam) -> dict:
+        """Send a reset code on WhatsApp.
+
+        The answer is the same whether the number has an account or not, so
+        the form cannot be used to find out who is registered.
+        """
+        async with async_db_session() as db:
+            user = await user_dao.get_by_phone(db, obj.phone)
+        if user and user.status:
+            if not await otp_service.can_resend(obj.phone, 'reset'):
+                raise errors.ForbiddenError(msg='Patientez un instant avant de redemander un code.')
+            await otp_service.start(obj.phone, 'reset')
+            await otp_service.mark_resent(obj.phone, 'reset')
+        return {'sent': True}
+
+    @staticmethod
+    async def reset_password(*, obj: ResetPasswordParam) -> dict:
+        async with async_db_session.begin() as db:
+            user = await user_dao.get_by_phone(db, obj.phone)
+            if not user or not user.status:
+                # Same message as a wrong code: no hint about the account.
+                raise errors.ForbiddenError(msg='Code expiré ou introuvable. Demandez un nouveau code.')
+            await otp_service.verify(obj.phone, obj.code, 'reset')  # raises on bad/expired code
+            user.password = get_hash_password(f'{obj.new_password}{user.salt}')
+            # The code proved the member owns the number.
+            user.email_verified = True
+            user_x_id = user.x_id
+        # Whoever knew the old password is signed out everywhere.
+        await redis_client.delete_prefix(f'{settings.TOKEN_REDIS_PREFIX}:{user_x_id}:')
+        await redis_client.delete_prefix(f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_x_id}:')
+        await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{user_x_id}')
+        return {'reset': True}
+
+    @staticmethod
     async def new_token(*, request: Request, response: Response) -> GetNewToken:
         translator = Translator(request.state.locale)
         refresh_token = request.cookies.get(settings.COOKIE_REFRESH_TOKEN_KEY)
@@ -278,12 +320,17 @@ class AuthService:
                 raise errors.NotFoundError(msg=translator.t('auth.incorrect_credential'))
             elif not current_user.status:
                 raise errors.AuthorizationError(msg=translator.t('auth.account_locked'))
-            current_token = get_token(request)
+            # The access token may be long gone (browser reopened weeks later):
+            # the refresh cookie alone is enough to resume the session.
+            try:
+                current_token = get_token(request)
+            except Exception:  # noqa: BLE001
+                current_token = None
             new_token = await create_new_token(
                 sub=str(current_user.x_id),
                 token=current_token,
                 refresh_token=refresh_token,
-                multi_login=False,
+                multi_login=settings.TOKEN_MULTI_LOGIN,
             )
             response.set_cookie(
                 key=settings.COOKIE_REFRESH_TOKEN_KEY,
@@ -306,13 +353,12 @@ class AuthService:
         token = get_token(request)
         refresh_token = request.cookies.get(settings.COOKIE_REFRESH_TOKEN_KEY)
         response.delete_cookie(settings.COOKIE_REFRESH_TOKEN_KEY)
-        # if request.user.is_multi_login:
-        #     key = f'{settings.TOKEN_REDIS_PREFIX}:{request.user.id}:{token}'
-        #     await redis_client.delete(key)
-        #     if refresh_token:
-        #         key = f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{request.user.id}:{refresh_token}'
-        #         await redis_client.delete(key)
-        # else:
+        if settings.TOKEN_MULTI_LOGIN:
+            # Sign out THIS device only; the member's other devices stay in.
+            await redis_client.delete(f'{settings.TOKEN_REDIS_PREFIX}:{request.user.x_id}:{token}')
+            if refresh_token:
+                await redis_client.delete(f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{request.user.x_id}:{refresh_token}')
+            return
         key_prefix = f'{settings.TOKEN_REDIS_PREFIX}:{request.user.x_id}:'
         await redis_client.delete_prefix(key_prefix)
         key_prefix = f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{request.user.x_id}:'

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { getToken, setToken } from '@/lib/api';
+import { getToken, mayHaveSession, refreshAccessToken, setToken } from '@/lib/api';
 import { authService, type RegisterPayload } from '@/services/auth';
 import type { AuthUser, OtpRequired } from '@/types';
 
@@ -30,12 +30,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const bootstrap = async () => {
-      if (!getToken()) {
-        setLoading(false);
+      // No access token kept (expired, other tab cleared it, browser restarted):
+      // the httpOnly refresh cookie may still hold a session. Opening any
+      // STOUDENT link then signs the member back in without a password.
+      if (!getToken() && !(mayHaveSession() && (await refreshAccessToken()))) {
+        if (!cancelled) setLoading(false);
         return;
       }
       try {
-        const me = await authService.me();
+        const me = await authService.me().catch(async (error) => {
+          if (!(await refreshAccessToken())) throw error;
+          return authService.me();
+        });
         if (!cancelled) setUser(me);
       } catch {
         if (!cancelled) {
