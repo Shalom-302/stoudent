@@ -162,6 +162,29 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   return (payload?.data ?? null) as T;
 }
 
+/**
+ * Multipart upload (a photo). Same auth and single-refresh rule as apiFetch,
+ * but the browser sets the multipart Content-Type and boundary itself.
+ */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const send = () => {
+    const token = getToken();
+    return fetch(`${API_URL}${API_PREFIX}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    });
+  };
+  let response = await send();
+  if (response.status === 401 && (await refreshAccessToken())) response = await send();
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
+  if (!response.ok || (payload && payload.code >= 400)) {
+    throw new ApiError(payload?.msg ?? `Envoi impossible (${response.status})`, response.status, payload?.code ?? response.status);
+  }
+  return payload?.data as T;
+}
+
 function makeClient(prefix: string) {
   return {
     get: <T>(path: string, options?: RequestOptions) =>

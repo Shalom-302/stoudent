@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import Field, HttpUrl, field_validator
 
+from backend.app.client.service.upload_service import URL_RE
+
 from backend.common.schema import SchemaBase
 
 MAX_TAGS = 5
@@ -31,9 +33,18 @@ class CreateQuestionParam(SchemaBase):
     filiere: str = Field(min_length=2, max_length=100)
     subject: str | None = Field(default=None, max_length=100)
     tags: list[str] = Field(default_factory=list)
-    image_url: HttpUrl | None = None
+    # Only a photo uploaded through /community/uploads: no third-party URL
+    # (tracking pixels, hotlinked content) ever reaches the page.
+    image_url: str | None = None
 
     _tags = field_validator('tags')(_clean_tags)
+
+    @field_validator('image_url')
+    @classmethod
+    def _own_upload(cls, v: str | None) -> str | None:
+        if v and not URL_RE.match(v):
+            raise ValueError('Photo invalide : envoyez-la depuis le formulaire.')
+        return v or None
 
     @field_validator('title', 'body', 'filiere')
     @classmethod
@@ -97,9 +108,12 @@ class AnswerDetail(SchemaBase):
     score: int
     is_accepted: bool
     teacher_endorsed: bool
+    thanks_count: int = 0
     created_time: datetime
+    edited: bool = False
     author: AuthorDetail
     my_vote: int = 0
+    my_thanks: bool = False
     is_mine: bool = False
 
 
@@ -121,6 +135,7 @@ class QuestionSummary(SchemaBase):
 class QuestionDetail(QuestionSummary):
     body: str
     image_url: str | None = None
+    edited: bool = False
     my_vote: int = 0
     is_mine: bool = False
     answers: list[AnswerDetail] = []
@@ -137,3 +152,18 @@ class ResourceDetail(SchemaBase):
     description: str | None = None
     created_time: datetime
     author: AuthorDetail
+
+
+class NotificationDetail(SchemaBase):
+    x_id: str
+    kind: str
+    actor: str
+    question_x_id: str
+    question_title: str
+    is_read: bool
+    created_time: datetime
+
+
+class MarkReadParam(SchemaBase):
+    # Empty: mark everything read.
+    x_ids: list[str] = Field(default_factory=list, max_length=100)

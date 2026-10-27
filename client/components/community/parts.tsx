@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp, Flag, GraduationCap } from 'lucide-react';
+import { ChevronDown, Flag, GraduationCap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { toast } from 'sonner';
@@ -60,7 +60,10 @@ export function useRequireAuth() {
   }, [user, router]);
 }
 
-/** Up/down arrows around the score. Clicking the active arrow withdraws the vote. */
+/**
+ * "👍 Utile" is the vote students recognise; the downvote stays available but
+ * discreet. Clicking the active choice withdraws it. Shows the net score.
+ */
 export function VoteControl({
   targetType,
   targetXId,
@@ -97,38 +100,108 @@ export function VoteControl({
     }
   };
 
-  const arrow = (active: boolean) =>
-    cn(
-      'grid h-9 w-9 place-items-center rounded-full border transition-colors disabled:opacity-40',
-      active ? 'border-ink-900 bg-ink-900 text-white' : 'border-ink-200 text-ink-500 hover:border-ink-900 hover:text-ink-900',
-    );
-
+  const liked = state.myVote === 1;
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="inline-flex items-center gap-1">
       <button
         type="button"
-        className={arrow(state.myVote === 1)}
         onClick={() => void cast(1)}
         disabled={disabled || pending}
-        aria-label="Vote utile"
-        aria-pressed={state.myVote === 1}
+        aria-pressed={liked}
+        aria-label={`Utile, ${state.score}`}
+        title={disabled ? 'Vous ne pouvez pas voter pour votre propre contenu' : 'Cette publication m’a aidé'}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+          liked ? 'border-ink-900 bg-ink-900 text-white' : 'border-ink-200 text-ink-700 hover:border-ink-900',
+        )}
       >
-        <ChevronUp className="h-5 w-5" />
+        <span aria-hidden>👍</span> Utile
+        <span className={cn('font-semibold', liked ? 'text-white' : 'text-ink-900')}>{state.score}</span>
       </button>
-      <span className="font-display text-lg font-semibold" aria-label={`Score ${state.score}`}>
-        {state.score}
-      </span>
       <button
         type="button"
-        className={arrow(state.myVote === -1)}
         onClick={() => void cast(-1)}
         disabled={disabled || pending}
-        aria-label="Vote pas utile"
         aria-pressed={state.myVote === -1}
+        aria-label="Pas utile"
+        title="Pas utile"
+        className={cn(
+          'grid h-8 w-8 place-items-center rounded-full transition-colors disabled:opacity-40',
+          state.myVote === -1 ? 'bg-ink-900 text-white' : 'text-ink-400 hover:bg-ink-50 hover:text-ink-900',
+        )}
       >
-        <ChevronDown className="h-5 w-5" />
+        <ChevronDown className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+/** "🙏 Merci" on an answer: gratitude, separate from judging it useful. */
+export function ThanksButton({
+  answerXId,
+  count,
+  thanked,
+  disabled,
+}: {
+  answerXId: string;
+  count: number;
+  thanked: boolean;
+  disabled?: boolean;
+}) {
+  const requireAuth = useRequireAuth();
+  const [state, setState] = React.useState({ count, thanked });
+  const [pending, setPending] = React.useState(false);
+  React.useEffect(() => setState({ count, thanked }), [count, thanked]);
+
+  const toggle = async () => {
+    if (!requireAuth() || pending) return;
+    setPending(true);
+    try {
+      const result = await communityService.thank(answerXId);
+      setState({ count: result.thanks_count, thanked: result.thanked });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible pour le moment.');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void toggle()}
+      disabled={disabled || pending}
+      aria-pressed={state.thanked}
+      title={disabled ? 'C’est votre réponse' : 'Remercier l’auteur'}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+        state.thanked ? 'border-ink-900 bg-ink-50 text-ink-900' : 'border-ink-200 text-ink-700 hover:border-ink-900',
+      )}
+    >
+      <span aria-hidden>🙏</span> Merci
+      {state.count > 0 && <span className="font-semibold text-ink-900">{state.count}</span>}
+    </button>
+  );
+}
+
+/** Opens WhatsApp with the question's title and link, ready to send to a class group. */
+export function ShareWhatsAppButton({ title, path }: { title: string; path: string }) {
+  const share = () => {
+    const url = `${window.location.origin}${path}`;
+    const text = `${title}\nQui peut m’aider ? Réponds sur STOUDENT : ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  };
+  return (
+    <button
+      type="button"
+      onClick={share}
+      className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-sm font-medium text-ink-700 transition-colors hover:border-ink-900"
+    >
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+        <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.3.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.4-.2Z" />
+      </svg>
+      Partager sur WhatsApp
+    </button>
   );
 }
 
@@ -222,11 +295,11 @@ export function PostBody({ text }: { text: string }) {
           <pre key={i} className="overflow-x-auto rounded-lg bg-ink-900 p-3 font-mono text-[13px] text-white">
             <code>{part.replace(/^\w*\n/, '')}</code>
           </pre>
-        ) : (
+        ) : part.trim() ? (
           <p key={i} className="whitespace-pre-wrap break-words">
             {part.trim()}
           </p>
-        ),
+        ) : null,
       )}
     </div>
   );

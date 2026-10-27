@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, GraduationCap, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, GraduationCap, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -12,7 +12,9 @@ import {
   FiliereChip,
   PostBody,
   ReportButton,
+  ShareWhatsAppButton,
   TagChip,
+  ThanksButton,
   useRequireAuth,
   VoteControl,
 } from '@/components/community/parts';
@@ -97,47 +99,58 @@ export default function QuestionPage() {
         <ArrowLeft className="h-4 w-4" /> Toutes les questions
       </Link>
 
-      <article className="mt-4 flex gap-4 sm:gap-6">
-        <VoteControl targetType="question" targetXId={q.x_id} score={q.score} myVote={q.my_vote} disabled={q.is_mine} />
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{q.title}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <FiliereChip filiere={q.filiere} />
-            {q.subject && <span className="text-xs text-ink-500">{q.subject}</span>}
-            {q.tags.map((t) => (
-              <Link key={t} href={`/questions?tag=${encodeURIComponent(t)}`}>
-                <TagChip tag={t} />
+      <article className="mt-4">
+        <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{q.title}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <FiliereChip filiere={q.filiere} />
+          {q.subject && <span className="text-xs text-ink-500">{q.subject}</span>}
+          {q.tags.map((t) => (
+            <Link key={t} href={`/questions?tag=${encodeURIComponent(t)}`}>
+              <TagChip tag={t} />
+            </Link>
+          ))}
+          <span className="text-xs text-ink-400">
+            · {q.view_count} vue{q.view_count > 1 ? 's' : ''}
+            {q.edited && ' · modifiée'}
+          </span>
+        </div>
+        <div className="mt-5">
+          <PostBody text={q.body} />
+        </div>
+        {q.image_url && (
+          <a href={q.image_url} target="_blank" rel="noopener noreferrer" className="mt-4 block">
+            {/* eslint-disable-next-line @next/next/no-img-element -- same-origin upload */}
+            <img
+              src={q.image_url}
+              alt="Photo de l’exercice jointe à la question"
+              className="max-h-[28rem] rounded-xl border border-ink-200 object-contain"
+            />
+          </a>
+        )}
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <VoteControl targetType="question" targetXId={q.x_id} score={q.score} myVote={q.my_vote} disabled={q.is_mine} />
+          <ShareWhatsAppButton title={q.title} path={`/questions/${q.x_id}`} />
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-3">
+          <AuthorLine author={q.author} time={q.created_time} />
+          <div className="flex items-center gap-4">
+            {q.is_mine && (
+              <Link
+                href={`/questions/${q.x_id}/edit`}
+                className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-900"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Modifier
               </Link>
-            ))}
-            <span className="text-xs text-ink-400">· {q.view_count} vue{q.view_count > 1 ? 's' : ''}</span>
-          </div>
-          <div className="mt-5">
-            <PostBody text={q.body} />
-          </div>
-          {q.image_url && (
-            <a href={q.image_url} target="_blank" rel="noopener noreferrer nofollow" className="mt-4 block">
-              {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary external host */}
-              <img
-                src={q.image_url}
-                alt="Énoncé joint à la question"
-                className="max-h-96 rounded-xl border border-ink-200 object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </a>
-          )}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-3">
-            <AuthorLine author={q.author} time={q.created_time} />
-            <div className="flex items-center gap-4">
-              {q.is_mine && q.answer_count === 0 && (
-                <button
-                  onClick={() => confirm('Supprimer cette question ?') && remove.mutate()}
-                  className="inline-flex items-center gap-1 text-xs text-ink-400 hover:text-red-700"
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Supprimer
-                </button>
-              )}
-              {!q.is_mine && <ReportButton targetType="question" targetXId={q.x_id} />}
-            </div>
+            )}
+            {q.is_mine && q.answer_count === 0 && (
+              <button
+                onClick={() => confirm('Supprimer cette question ?') && remove.mutate()}
+                className="inline-flex items-center gap-1 text-xs text-ink-400 hover:text-red-700"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Supprimer
+              </button>
+            )}
+            {!q.is_mine && <ReportButton targetType="question" targetXId={q.x_id} />}
           </div>
         </div>
       </article>
@@ -146,6 +159,11 @@ export default function QuestionPage() {
         <h2 className="font-display text-xl font-semibold">
           {q.answers.length} réponse{q.answers.length > 1 ? 's' : ''}
         </h2>
+        {q.answers.length === 0 && (
+          <p className="mt-2 text-sm text-ink-500">
+            Pas encore de réponse. Partagez la question sur WhatsApp à votre classe pour aller plus vite.
+          </p>
+        )}
         <ul className="mt-4 space-y-4">
           {q.answers.map((a) => (
             <AnswerItem
@@ -155,6 +173,7 @@ export default function QuestionPage() {
               canEndorse={isTeacher && !a.is_mine}
               onAccept={() => accept.mutate(a.x_id)}
               onEndorse={() => endorse.mutate(a.x_id)}
+              onChanged={() => void refresh()}
             />
           ))}
         </ul>
@@ -199,64 +218,123 @@ function AnswerItem({
   canEndorse,
   onAccept,
   onEndorse,
+  onChanged,
 }: {
   answer: AnswerDetail;
   canAccept: boolean;
   canEndorse: boolean;
   onAccept: () => void;
   onEndorse: () => void;
+  onChanged: () => void;
 }) {
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(a.body);
+
+  const save = useMutation({
+    mutationFn: () => communityService.editAnswer(a.x_id, draft.trim()),
+    onSuccess: () => {
+      setEditing(false);
+      toast.success('Réponse modifiée.');
+      onChanged();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const remove = useMutation({
+    mutationFn: () => communityService.deleteAnswer(a.x_id),
+    onSuccess: () => {
+      toast.success('Réponse supprimée.');
+      onChanged();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   return (
-    <li
-      className={cn(
-        'flex gap-4 rounded-2xl border p-5 sm:gap-6',
-        a.is_accepted ? 'border-success bg-success/5' : 'border-ink-200',
-      )}
-    >
-      <div className="flex flex-col items-center gap-2">
-        <VoteControl targetType="answer" targetXId={a.x_id} score={a.score} myVote={a.my_vote} disabled={a.is_mine} />
-        {canAccept ? (
-          <button
-            onClick={onAccept}
-            title={a.is_accepted ? 'Retirer la meilleure réponse' : 'Marquer comme meilleure réponse'}
-            aria-pressed={a.is_accepted}
-            className={cn(
-              'grid h-9 w-9 place-items-center rounded-full border transition-colors',
-              a.is_accepted ? 'border-success bg-success text-white' : 'border-ink-200 text-ink-400 hover:border-success hover:text-success',
-            )}
-          >
-            <Check className="h-5 w-5" />
-          </button>
-        ) : (
-          a.is_accepted && (
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-success text-white" title="Meilleure réponse">
-              <Check className="h-5 w-5" />
-            </span>
-          )
+    <li className={cn('rounded-2xl border p-5', a.is_accepted ? 'border-success bg-success/5' : 'border-ink-200')}>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {a.is_accepted && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-success px-2 py-0.5 text-[11px] font-semibold text-white">
+            <Check className="h-3 w-3" /> Meilleure réponse
+          </span>
+        )}
+        {a.teacher_endorsed && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-ink-900 px-2 py-0.5 text-[11px] font-semibold text-white">
+            <GraduationCap className="h-3 w-3" /> Validée par un professeur
+          </span>
         )}
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="mb-3 flex flex-wrap gap-2">
-          {a.is_accepted && (
-            <span className="rounded-md bg-success px-2 py-0.5 text-[11px] font-semibold text-white">Meilleure réponse</span>
-          )}
-          {a.teacher_endorsed && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-ink-900 px-2 py-0.5 text-[11px] font-semibold text-white">
-              <GraduationCap className="h-3 w-3" /> Validée par un professeur
-            </span>
-          )}
-        </div>
-        <PostBody text={a.body} />
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-3">
-          <AuthorLine author={a.author} time={a.created_time} />
-          <div className="flex items-center gap-4">
-            {canEndorse && (
-              <button onClick={onEndorse} className="inline-flex items-center gap-1 text-xs font-semibold text-ink-700 hover:text-ink-900">
-                <GraduationCap className="h-3.5 w-3.5" /> {a.teacher_endorsed ? 'Retirer la validation' : 'Valider (prof)'}
-              </button>
-            )}
-            {!a.is_mine && <ReportButton targetType="answer" targetXId={a.x_id} />}
+
+      {editing ? (
+        <form
+          className="space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (draft.trim().length < 20) return toast.error('Une réponse fait au moins 20 caractères.');
+            save.mutate();
+          }}
+        >
+          <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={6} maxLength={20000} aria-label="Modifier la réponse" />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" size="sm" disabled={save.isPending}>
+              Enregistrer
+            </Button>
           </div>
+        </form>
+      ) : (
+        <PostBody text={a.body} />
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <VoteControl targetType="answer" targetXId={a.x_id} score={a.score} myVote={a.my_vote} disabled={a.is_mine} />
+        <ThanksButton answerXId={a.x_id} count={a.thanks_count} thanked={a.my_thanks} disabled={a.is_mine} />
+        {canAccept && (
+          <button
+            onClick={onAccept}
+            aria-pressed={a.is_accepted}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+              a.is_accepted ? 'border-success bg-success text-white' : 'border-ink-200 text-ink-700 hover:border-success hover:text-success',
+            )}
+          >
+            <Check className="h-4 w-4" /> {a.is_accepted ? 'Meilleure réponse' : 'Choisir comme meilleure réponse'}
+          </button>
+        )}
+        {canEndorse && (
+          <button
+            onClick={onEndorse}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-sm font-medium text-ink-700 hover:border-ink-900"
+          >
+            <GraduationCap className="h-4 w-4" /> {a.teacher_endorsed ? 'Retirer la validation' : 'Valider (prof)'}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-3">
+        <AuthorLine author={a.author} time={a.created_time} />
+        <div className="flex items-center gap-4">
+          {a.edited && <span className="text-xs text-ink-400">modifiée</span>}
+          {a.is_mine && !editing && (
+            <>
+              <button
+                onClick={() => {
+                  setDraft(a.body);
+                  setEditing(true);
+                }}
+                className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-900"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Modifier
+              </button>
+              <button
+                onClick={() => confirm('Supprimer votre réponse ?') && remove.mutate()}
+                className="inline-flex items-center gap-1 text-xs text-ink-400 hover:text-red-700"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Supprimer
+              </button>
+            </>
+          )}
+          {!a.is_mine && <ReportButton targetType="answer" targetXId={a.x_id} />}
         </div>
       </div>
     </li>

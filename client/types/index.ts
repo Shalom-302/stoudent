@@ -458,18 +458,32 @@ export interface AnswerDetail {
   score: number;
   is_accepted: boolean;
   teacher_endorsed: boolean;
+  thanks_count: number;
   created_time: string;
+  edited: boolean;
   author: CommunityAuthor;
   my_vote: number;
+  my_thanks: boolean;
   is_mine: boolean;
 }
 
 export interface QuestionDetail extends QuestionSummary {
   body: string;
   image_url: string | null;
+  edited: boolean;
   my_vote: number;
   is_mine: boolean;
   answers: AnswerDetail[];
+}
+
+export interface NotificationItem {
+  x_id: string;
+  kind: 'answer' | 'accepted' | 'endorsed' | 'thanks';
+  actor: string;
+  question_x_id: string;
+  question_title: string;
+  is_read: boolean;
+  created_time: string;
 }
 
 export interface ResourceItem {

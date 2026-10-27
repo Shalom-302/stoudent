@@ -5,7 +5,8 @@ having an account. Writing requires a session.
 """
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Path, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Path, Query, Request, UploadFile
+from fastapi.responses import Response
 from fastapi_limiter.depends import RateLimiter
 
 from backend.app.client.schema.community import (
@@ -13,18 +14,22 @@ from backend.app.client.schema.community import (
     CreateQuestionParam,
     CreateReportParam,
     CreateResourceParam,
+    MarkReadParam,
+    NotificationDetail,
     QuestionDetail,
     QuestionSummary,
     ResourceDetail,
     VoteParam,
 )
 from backend.app.client.service.community_service import community_service
+from backend.app.client.service.upload_service import read_image, store_image
 from backend.common.enums import Role as RoleEnum
 from backend.common.exception import errors
 from backend.core.conf import settings
 from backend.common.response.response_schema import ResponseModel, response_base
 from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.roles import require_roles
+from starlette.concurrency import run_in_threadpool
 
 router = APIRouter(prefix='/community', tags=['Community'])
 
@@ -93,8 +98,12 @@ async def delete_question(request: Request, x_id: XIdPath) -> ResponseModel:
     summary='Answer a question',
     dependencies=[DependsJwtAuth, Depends(RateLimiter(times=30, hours=1))],
 )
-async def create_answer(request: Request, x_id: XIdPath, obj: CreateAnswerParam) -> ResponseModel:
-    data = await community_service.create_answer(question_x_id=x_id, user_id=request.user.id, obj=obj)
+async def create_answer(
+    request: Request, x_id: XIdPath, obj: CreateAnswerParam, background: BackgroundTasks
+) -> ResponseModel:
+    data = await community_service.create_answer(
+        question_x_id=x_id, user_id=request.user.id, obj=obj, background=background
+    )
     return response_base.success(request=request, data=data)
 
 
@@ -114,8 +123,75 @@ async def accept_answer(request: Request, x_id: XIdPath, answer_x_id: XIdPath) -
     dependencies=[DependsJwtAuth, Depends(require_roles(RoleEnum.TEACHER.value, RoleEnum.ADMIN.value))],
 )
 async def endorse_answer(request: Request, x_id: XIdPath) -> ResponseModel:
-    data = await community_service.endorse_answer(answer_x_id=x_id)
+    data = await community_service.endorse_answer(answer_x_id=x_id, user_id=request.user.id)
     return response_base.success(request=request, data=data)
+
+
+@router.patch('/questions/{x_id}', summary='Edit my question', dependencies=[DependsJwtAuth])
+async def edit_question(request: Request, x_id: XIdPath, obj: CreateQuestionParam) -> ResponseModel:
+    await community_service.edit_question(x_id=x_id, user_id=request.user.id, obj=obj)
+    return response_base.success(request=request)
+
+
+@router.patch('/answers/{x_id}', summary='Edit my answer', dependencies=[DependsJwtAuth])
+async def edit_answer(request: Request, x_id: XIdPath, obj: CreateAnswerParam) -> ResponseModel:
+    await community_service.edit_answer(answer_x_id=x_id, user_id=request.user.id, obj=obj)
+    return response_base.success(request=request)
+
+
+@router.delete('/answers/{x_id}', summary='Delete my answer', dependencies=[DependsJwtAuth])
+async def delete_answer(request: Request, x_id: XIdPath) -> ResponseModel:
+    await community_service.delete_answer(answer_x_id=x_id, user_id=request.user.id)
+    return response_base.success(request=request)
+
+
+@router.post(
+    '/answers/{x_id}/thanks',
+    summary='Toggle "Merci" on an answer',
+    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=60, minutes=10))],
+)
+async def thank_answer(request: Request, x_id: XIdPath) -> ResponseModel:
+    data = await community_service.thank_answer(answer_x_id=x_id, user_id=request.user.id)
+    return response_base.success(request=request, data=data)
+
+
+@router.get('/notifications', summary='My notifications', dependencies=[DependsJwtAuth])
+async def list_notifications(
+    request: Request, limit: Annotated[int, Query(ge=1, le=50)] = 20
+) -> ResponseModel:
+    data = await community_service.list_notifications(user_id=request.user.id, limit=limit)
+    data['items'] = [NotificationDetail(**item) for item in data['items']]
+    return response_base.success(request=request, data=data)
+
+
+@router.post('/notifications/read', summary='Mark notifications read', dependencies=[DependsJwtAuth])
+async def mark_read(request: Request, obj: MarkReadParam) -> ResponseModel:
+    await community_service.mark_read(user_id=request.user.id, x_ids=obj.x_ids)
+    return response_base.success(request=request)
+
+
+@router.post(
+    '/uploads',
+    summary='Upload a photo of an exercise statement',
+    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=20, hours=1))],
+)
+async def upload_image(request: Request, file: UploadFile = File(...)) -> ResponseModel:
+    # Read one byte past the cap so an oversized file is refused without
+    # pulling the whole body into memory.
+    raw = await file.read(settings.UPLOAD_MAX_BYTES + 1)
+    url = await run_in_threadpool(store_image, raw)
+    return response_base.success(request=request, data={'image_url': url})
+
+
+@router.get('/uploads/{name}', summary='A photo attached to a question')
+async def get_image(name: Annotated[str, Path(max_length=40)]) -> Response:
+    data = await run_in_threadpool(read_image, name)
+    # Names are random and never reused: cache for a year.
+    return Response(
+        content=data,
+        media_type='image/jpeg',
+        headers={'Cache-Control': 'public, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff'},
+    )
 
 
 @router.post(

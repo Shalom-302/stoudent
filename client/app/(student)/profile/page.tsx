@@ -160,7 +160,8 @@ export default function ProfilePage() {
               <span>
                 <span className="font-medium text-ink-900">Infos STOUDENT sur WhatsApp</span>
                 <br />
-                Dates d’examens et annonces importantes. Votre numéro n’est jamais affiché ni partagé.
+                Un message quand quelqu’un répond à votre question (une fois par question), et les
+                dates d’examens. Votre numéro n’est jamais affiché ni partagé.
               </span>
             </label>
 

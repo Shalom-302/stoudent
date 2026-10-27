@@ -315,8 +315,8 @@ export function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setWhatsappOptIn(e.target.checked)}
             />
             <span>
-              Je veux recevoir sur WhatsApp les infos utiles de STOUDENT (dates d’examens, annonces).
-              Facultatif, modifiable à tout moment dans mon profil.
+              Je veux être prévenu sur WhatsApp quand quelqu’un répond à ma question, et recevoir les
+              infos utiles (dates d’examens). Facultatif, modifiable dans mon profil.
             </span>
           </label>
         )}

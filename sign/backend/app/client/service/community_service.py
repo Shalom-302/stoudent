@@ -7,9 +7,11 @@ is worth more than a useful question, and an accepted answer most of all.
 """
 from urllib.parse import urlparse
 
-from sqlalchemy import func, or_, select, update
+from fastapi import BackgroundTasks
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
+from backend.app.client.service.notify_service import add_notification, notify_first_answer
 from backend.app.client.schema.community import (
     CreateAnswerParam,
     CreateQuestionParam,
@@ -23,11 +25,13 @@ from backend.crud.crud_student import student_dao
 from backend.database.db_postgres import async_db_session
 from backend.database.db_redis import redis_client
 from backend.models import StudentProfile, User
-from backend.models.community import Answer, Question, Report, Resource, Vote
+from backend.models.community import Answer, Notification, Question, Report, Resource, Vote
+from backend.utils.timezone import timezone
 
 REP_QUESTION_VOTE = 5
 REP_ANSWER_VOTE = 10
 REP_ACCEPTED = 15
+REP_THANKS = 2
 # Distinct reports after which a content is hidden pending moderation.
 AUTO_HIDE_REPORTS = 3
 EXCERPT_LENGTH = 220
@@ -225,7 +229,7 @@ class CommunityService:
                 filiere=obj.filiere,
                 subject=obj.subject,
                 tags=obj.tags,
-                image_url=str(obj.image_url) if obj.image_url else None,
+                image_url=obj.image_url,
             )
             db.add(question)
             await db.flush()
@@ -271,7 +275,7 @@ class CommunityService:
                         Vote.user_id == viewer_id,
                         or_(
                             (Vote.target_type == 'question') & (Vote.target_id == question.id),
-                            (Vote.target_type == 'answer') & Vote.target_id.in_([a.id for a in answers] or [0]),
+                            Vote.target_type.in_(('answer', 'thanks')) & Vote.target_id.in_([a.id for a in answers] or [0]),
                         ),
                     )
                 )
@@ -282,6 +286,7 @@ class CommunityService:
             data.update(
                 body=question.body,
                 image_url=question.image_url,
+                edited=question.edited_at is not None,
                 my_vote=my_votes.get(('question', question.id), 0),
                 is_mine=viewer_id == question.author_id,
                 answers=[
@@ -291,9 +296,12 @@ class CommunityService:
                         'score': a.score,
                         'is_accepted': a.is_accepted,
                         'teacher_endorsed': a.teacher_endorsed,
+                        'thanks_count': a.thanks_count,
                         'created_time': a.created_time,
+                        'edited': a.edited_at is not None,
                         'author': _author(a.author, profiles.get(a.author_id)),
                         'my_vote': my_votes.get(('answer', a.id), 0),
+                        'my_thanks': ('thanks', a.id) in my_votes,
                         'is_mine': viewer_id == a.author_id,
                     }
                     for a in answers
@@ -313,14 +321,25 @@ class CommunityService:
 
     # -- Answers ------------------------------------------------------------
 
-    async def create_answer(self, *, question_x_id: str, user_id: int, obj: CreateAnswerParam) -> dict:
+    async def create_answer(
+        self, *, question_x_id: str, user_id: int, obj: CreateAnswerParam, background: BackgroundTasks
+    ) -> dict:
         async with async_db_session.begin() as db:
             question = await self._get_question(db, question_x_id, for_update=True)
             answer = Answer(question_id=question.id, author_id=user_id, body=obj.body.strip())
             db.add(answer)
             question.answer_count += 1
+            actor = await db.get(User, user_id)
+            notify = add_notification(db, user_id=question.author_id, kind='answer', question=question, actor=actor)
             await db.flush()
-            return {'x_id': answer.x_id}
+            result = {'x_id': answer.x_id}
+        # After the commit: the asker is told only about an answer that exists.
+        if notify:
+            # WhatsApp only for the first answer (the task checks and marks it).
+            background.add_task(
+                notify_first_answer, user_id=question.author_id, question_x_id=question.x_id, title=question.title
+            )
+        return result
 
     async def accept_answer(self, *, question_x_id: str, answer_x_id: str, user_id: int) -> None:
         """Mark (or unmark, if already accepted) the solution the author kept."""
@@ -352,9 +371,11 @@ class CommunityService:
             # Accepting your own answer is allowed, rewarding it is not.
             if answer.author_id != user_id:
                 await _add_reputation(db, answer.author_id, REP_ACCEPTED)
+                actor = await db.get(User, user_id)
+                add_notification(db, user_id=answer.author_id, kind='accepted', question=question, actor=actor)
 
     @staticmethod
-    async def endorse_answer(*, answer_x_id: str) -> dict:
+    async def endorse_answer(*, answer_x_id: str, user_id: int) -> dict:
         """Teacher toggle: 'validée par un professeur'. The role check is in the route."""
         async with async_db_session.begin() as db:
             answer = (
@@ -363,7 +384,149 @@ class CommunityService:
             if answer is None:
                 raise errors.NotFoundError(msg='Réponse introuvable.')
             answer.teacher_endorsed = not answer.teacher_endorsed
+            if answer.teacher_endorsed and answer.author_id != user_id:
+                question = await db.get(Question, answer.question_id)
+                actor = await db.get(User, user_id)
+                add_notification(db, user_id=answer.author_id, kind='endorsed', question=question, actor=actor)
             return {'teacher_endorsed': answer.teacher_endorsed}
+
+    @staticmethod
+    async def _own_answer(db, answer_x_id: str, user_id: int) -> Answer:
+        answer = (
+            await db.execute(
+                select(Answer).where(Answer.x_id == answer_x_id, Answer.is_hidden.is_(False)).with_for_update(of=Answer)
+            )
+        ).unique().scalars().first()
+        if answer is None:
+            raise errors.NotFoundError(msg='Réponse introuvable.')
+        if answer.author_id != user_id:
+            raise errors.ForbiddenError(msg='Seul l’auteur peut modifier sa réponse.')
+        return answer
+
+    async def edit_question(self, *, x_id: str, user_id: int, obj: CreateQuestionParam) -> None:
+        async with async_db_session.begin() as db:
+            question = await self._get_question(db, x_id, for_update=True)
+            if question.author_id != user_id:
+                raise errors.ForbiddenError(msg='Seul l’auteur peut modifier sa question.')
+            question.title = obj.title
+            question.body = obj.body
+            question.filiere = obj.filiere
+            question.subject = obj.subject
+            question.tags = obj.tags
+            question.image_url = obj.image_url
+            question.edited_at = timezone.now()
+
+    async def edit_answer(self, *, answer_x_id: str, user_id: int, obj: CreateAnswerParam) -> None:
+        async with async_db_session.begin() as db:
+            answer = await self._own_answer(db, answer_x_id, user_id)
+            answer.body = obj.body.strip()
+            answer.edited_at = timezone.now()
+
+    async def delete_answer(self, *, answer_x_id: str, user_id: int) -> None:
+        """Delete my answer, taking back the reputation it earned."""
+        async with async_db_session.begin() as db:
+            answer = await self._own_answer(db, answer_x_id, user_id)
+            # Lock the question row only: its eager author join cannot be locked.
+            question = (
+                await db.execute(select(Question).where(Question.id == answer.question_id).with_for_update(of=Question))
+            ).unique().scalars().one()
+
+            votes = (
+                await db.execute(
+                    select(Vote.target_type, Vote.value).where(
+                        Vote.target_type.in_(('answer', 'thanks')), Vote.target_id == answer.id
+                    )
+                )
+            ).all()
+            earned = sum(
+                _vote_reputation(v, REP_ANSWER_VOTE) if t == 'answer' else REP_THANKS for t, v in votes
+            )
+            if answer.is_accepted:
+                question.accepted_answer_id = None
+                if question.author_id != user_id:
+                    earned += REP_ACCEPTED
+            await _add_reputation(db, user_id, -earned)
+            await db.execute(
+                delete(Vote).where(Vote.target_type.in_(('answer', 'thanks')), Vote.target_id == answer.id)
+            )
+            question.answer_count = max(question.answer_count - 1, 0)
+            await db.delete(answer)
+
+    @staticmethod
+    async def thank_answer(*, answer_x_id: str, user_id: int) -> dict:
+        """Toggle "🙏 Merci" on an answer."""
+        async with async_db_session.begin() as db:
+            answer = (
+                await db.execute(
+                    select(Answer).where(Answer.x_id == answer_x_id, Answer.is_hidden.is_(False)).with_for_update(of=Answer)
+                )
+            ).unique().scalars().first()
+            if answer is None:
+                raise errors.NotFoundError(msg='Réponse introuvable.')
+            if answer.author_id == user_id:
+                raise errors.ForbiddenError(msg='Vous ne pouvez pas vous remercier vous-même.')
+            existing = (
+                await db.execute(
+                    select(Vote).where(Vote.user_id == user_id, Vote.target_type == 'thanks', Vote.target_id == answer.id)
+                )
+            ).scalars().first()
+            if existing:
+                await db.delete(existing)
+                answer.thanks_count = max(answer.thanks_count - 1, 0)
+                await _add_reputation(db, answer.author_id, -REP_THANKS)
+                return {'thanks_count': answer.thanks_count, 'thanked': False}
+            db.add(Vote(user_id=user_id, target_type='thanks', target_id=answer.id, value=1))
+            answer.thanks_count += 1
+            await _add_reputation(db, answer.author_id, REP_THANKS)
+            question = await db.get(Question, answer.question_id)
+            actor = await db.get(User, user_id)
+            add_notification(db, user_id=answer.author_id, kind='thanks', question=question, actor=actor)
+            return {'thanks_count': answer.thanks_count, 'thanked': True}
+
+    # -- Notifications ------------------------------------------------------
+
+    @staticmethod
+    async def list_notifications(*, user_id: int, limit: int) -> dict:
+        async with async_db_session() as db:
+            rows = (
+                await db.execute(
+                    select(Notification, Question.x_id, Question.title)
+                    .join(Question, Question.id == Notification.question_id)
+                    .where(Notification.user_id == user_id)
+                    .order_by(Notification.id.desc())
+                    .limit(limit)
+                )
+            ).all()
+            unread = (
+                await db.execute(
+                    select(func.count(Notification.id)).where(
+                        Notification.user_id == user_id, Notification.is_read.is_(False)
+                    )
+                )
+            ).scalar_one()
+        return {
+            'unread': int(unread),
+            'items': [
+                {
+                    'x_id': n.x_id,
+                    'kind': n.kind,
+                    'actor': n.actor,
+                    'question_x_id': qx,
+                    'question_title': title,
+                    'is_read': n.is_read,
+                    'created_time': n.created_time,
+                }
+                for n, qx, title in rows
+            ],
+        }
+
+    @staticmethod
+    async def mark_read(*, user_id: int, x_ids: list[str]) -> None:
+        async with async_db_session.begin() as db:
+            stmt = update(Notification).where(Notification.user_id == user_id, Notification.is_read.is_(False))
+            if x_ids:
+                stmt = stmt.where(Notification.x_id.in_(x_ids))
+            await db.execute(stmt.values(is_read=True))
 
     # -- Votes --------------------------------------------------------------
 

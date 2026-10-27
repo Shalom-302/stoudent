@@ -1,6 +1,7 @@
-import { api } from '@/lib/api';
+import { api, apiUpload } from '@/lib/api';
 import type {
   CommunityMeta,
+  NotificationItem,
   Paged,
   QuestionDetail,
   QuestionSummary,
@@ -55,10 +56,27 @@ export const communityService = {
   ask: (payload: AskPayload) => api.post<{ x_id: string }>('/community/questions', payload),
   deleteQuestion: (xId: string) => api.delete<null>(`/community/questions/${xId}`),
 
+  editQuestion: (xId: string, payload: AskPayload) => api.patch<null>(`/community/questions/${xId}`, payload),
+
+  /** Photo of the exercise: re-encoded server-side, returns the URL to attach. */
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiUpload<{ image_url: string }>('/community/uploads', form);
+  },
+
   answer: (questionXId: string, body: string) =>
     api.post<{ x_id: string }>(`/community/questions/${questionXId}/answers`, { body }),
   accept: (questionXId: string, answerXId: string) =>
     api.post<null>(`/community/questions/${questionXId}/accept/${answerXId}`),
+  editAnswer: (answerXId: string, body: string) => api.patch<null>(`/community/answers/${answerXId}`, { body }),
+  deleteAnswer: (answerXId: string) => api.delete<null>(`/community/answers/${answerXId}`),
+  thank: (answerXId: string) =>
+    api.post<{ thanks_count: number; thanked: boolean }>(`/community/answers/${answerXId}/thanks`),
+
+  notifications: () => api.get<{ unread: number; items: NotificationItem[] }>('/community/notifications'),
+  markRead: (xIds: string[] = []) => api.post<null>('/community/notifications/read', { x_ids: xIds }),
+
   endorse: (answerXId: string) =>
     api.post<{ teacher_endorsed: boolean }>(`/community/answers/${answerXId}/endorse`),
 

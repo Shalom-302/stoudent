@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation';
 import * as React from 'react';
 
 import { Logo } from '@/components/brand/logo';
+import { NotificationBell } from '@/components/community/notification-bell';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useIsAdmin } from '@/features/auth/use-admin';
@@ -132,6 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            {user && <NotificationBell />}
             {user ? (
               <>
                 <span className="hidden max-w-[18ch] truncate text-xs text-ink-500 xl:inline">

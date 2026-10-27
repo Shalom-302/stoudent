@@ -175,6 +175,17 @@ class Settings(BaseSettings):
     LOGIN_LOCK_SECONDS: int = 15 * 60
     LOGIN_FAIL_REDIS_PREFIX: str = 'stoudent:login_fail'
 
+    # Public address of the site, used in links sent on WhatsApp.
+    SITE_URL: str = ''
+    # "Someone answered your question" on WhatsApp: once per question, opted-in
+    # members only, capped per hour (WhatsApp bans numbers that send too much).
+    WHATSAPP_NOTIFY_ENABLED: bool = True
+    WHATSAPP_NOTIFY_MAX_PER_HOUR: int = 3
+
+    # Photos of exercise statements, stored in MinIO, served by the API.
+    UPLOAD_MAX_BYTES: int = 8 * 1024 * 1024
+    UPLOAD_MAX_SIDE: int = 1600
+
     # Shared resources (links): closed for the launch.
     COMMUNITY_RESOURCES_ENABLED: bool = False
 

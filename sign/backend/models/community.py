@@ -4,6 +4,8 @@ Tags, filière and matière are plain strings rather than lookup tables: the MVP
 needs to filter on them, not administer them, and a student typing a new
 matière should not wait for an admin to create it.
 """
+from datetime import datetime
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -32,7 +34,8 @@ class Question(Base):
     filiere: Mapped[str] = mapped_column(sa.String(100), index=True)
     subject: Mapped[str | None] = mapped_column(sa.String(100), index=True, default=None)
     tags: Mapped[list[str]] = mapped_column(ARRAY(sa.String(40)), default_factory=list, server_default='{}')
-    # Optional picture of the exercise statement (object-storage URL).
+    # Optional picture of the exercise statement: a same-origin path served by
+    # the API (/api/v1/community/uploads/<key>), never a third-party URL.
     image_url: Mapped[str | None] = mapped_column(sa.String(500), default=None)
     score: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     answer_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
@@ -41,6 +44,10 @@ class Question(Base):
         sa.ForeignKey('answer.id', ondelete='SET NULL', use_alter=True), init=False, default=None
     )
     is_hidden: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0', index=True)
+    # Set when the asker got the one WhatsApp message about a first answer.
+    answer_notified_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), init=False, default=None)
+    # Set when the author edits; updated_time also moves on every vote.
+    edited_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), init=False, default=None)
 
     author: Mapped['User'] = relationship(init=False, lazy='joined')
 
@@ -57,20 +64,26 @@ class Answer(Base):
     is_accepted: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0')
     # A verified teacher vouched for this answer.
     teacher_endorsed: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0')
+    # "🙏 Merci" from readers, separate from the score: thanking is not judging.
+    thanks_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     is_hidden: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0', index=True)
+    edited_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), init=False, default=None)
 
     author: Mapped['User'] = relationship(init=False, lazy='joined')
 
 
 class Vote(Base):
-    """One member, one vote per target. ``value`` is +1 or -1."""
+    """One member, one vote per target. ``value`` is +1 or -1.
+
+    target_type 'thanks' records a "Merci" on an answer (value always 1).
+    """
 
     __tablename__ = 'vote'
     __table_args__ = (sa.UniqueConstraint('user_id', 'target_type', 'target_id', name='uq_vote_user_target'),)
 
     id: Mapped[id_key] = mapped_column(init=False)
     user_id: Mapped[int] = mapped_column(sa.ForeignKey('user.id', ondelete='CASCADE'), index=True)
-    target_type: Mapped[str] = mapped_column(sa.String(20))  # 'question' | 'answer'
+    target_type: Mapped[str] = mapped_column(sa.String(20))  # 'question' | 'answer' | 'thanks'
     target_id: Mapped[int] = mapped_column(sa.Integer, index=True)
     value: Mapped[int] = mapped_column(sa.SmallInteger)
 
@@ -112,3 +125,23 @@ class Report(Base):
     reason: Mapped[str] = mapped_column(sa.String(40))
     details: Mapped[str | None] = mapped_column(sa.String(500), default=None)
     status: Mapped[str] = mapped_column(sa.String(20), init=False, default='open', server_default='open', index=True)
+
+
+class Notification(Base):
+    """Something happened to one of the member's posts.
+
+    ``kind``: 'answer' (new answer to my question), 'accepted' (my answer was
+    chosen), 'endorsed' (a teacher validated my answer), 'thanks'.
+    """
+
+    __tablename__ = 'notification'
+    __table_args__ = (sa.Index('ix_notification_user_unread', 'user_id', 'is_read'),)
+
+    id: Mapped[id_key] = mapped_column(init=False)
+    x_id: Mapped[str] = mapped_column(sa.String(32), init=False, unique=True, default=get_id)
+    user_id: Mapped[int] = mapped_column(sa.ForeignKey('user.id', ondelete='CASCADE'), index=True)
+    kind: Mapped[str] = mapped_column(sa.String(20))
+    question_id: Mapped[int] = mapped_column(sa.ForeignKey('question.id', ondelete='CASCADE'))
+    # Who triggered it, as shown (pseudo), so the list needs no join.
+    actor: Mapped[str] = mapped_column(sa.String(60))
+    is_read: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0')
