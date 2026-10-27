@@ -27,20 +27,20 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans Dokploy Environment}
       - POSTGRES_DATABASE=${POSTGRES_DATABASE:-stoudent}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-stoudentadmin}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY manquant dans Dokploy Environment (8 caracteres min)}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-stoudent}
       - MINIO_CLOUD_URL=${MINIO_CLOUD_URL:-https://${PUBLIC_DOMAIN}}
       # ⚠️ MANDATORY (forgeable JWTs otherwise):
-      - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY}
-      - OPERA_LOG_ENCRYPT_SECRET_KEY=${OPERA_LOG_ENCRYPT_SECRET_KEY}
+      - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY:?TOKEN_SECRET_KEY manquant dans Dokploy Environment}
+      - OPERA_LOG_ENCRYPT_SECRET_KEY=${OPERA_LOG_ENCRYPT_SECRET_KEY:?OPERA_LOG_ENCRYPT_SECRET_KEY manquant dans Dokploy Environment}
       # Host header guard: the web proxy calls http://stoudent-api:8000.
-      - TRUSTED_HOSTS=["stoudent-api","${PUBLIC_DOMAIN}"]
+      - TRUSTED_HOSTS=["stoudent-api","${PUBLIC_DOMAIN:?PUBLIC_DOMAIN manquant dans Dokploy Environment}"]
       - CORS_ALLOWED_ORIGINS=["https://${PUBLIC_DOMAIN}"]
       # Refresh cookie: first-party on the web origin, sent over HTTPS only.
       - COOKIE_SECURE=true
@@ -85,7 +85,7 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans Dokploy Environment}
       - POSTGRES_DB=${POSTGRES_DATABASE:-stoudent}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -114,7 +114,7 @@ services:
     command: server /data --console-address ":9001"
     environment:
       - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-stoudentadmin}
-      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY manquant dans Dokploy Environment (8 caracteres min)}
     volumes:
       - miniodata:/data
     networks: [stoudent]
