@@ -1,8 +1,8 @@
 {
-  "name": "signallab-client",
+  "name": "stoudent-client",
   "version": "0.1.0",
   "private": true,
-  "description": "SignalLab - immersive virtual laboratory for RIT signal processing courses.",
+  "description": "STOUDENT - student mutual-aid network for every BTS filière, with a virtual lab.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

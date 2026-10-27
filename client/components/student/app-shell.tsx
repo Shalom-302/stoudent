@@ -2,7 +2,6 @@
 
 import {
   Award,
-  BookOpen,
   Boxes,
   FlaskConical,
   LayoutDashboard,
@@ -34,7 +33,7 @@ interface NavItem {
   also?: string[];
 }
 
-/** SignalLab lives under one tab; its own pages get a secondary bar. */
+/** The virtual lab lives under one tab; its own pages get a secondary bar. */
 const LAB_NAV: NavItem[] = [
   { href: '/dashboard', label: 'MyLab', icon: LayoutDashboard },
   { href: '/world', label: 'Monde 3D', icon: Boxes },
@@ -45,7 +44,6 @@ const LAB_NAV: NavItem[] = [
 
 const NAV: NavItem[] = [
   { href: '/questions', label: 'Questions', icon: MessageCircleQuestion },
-  { href: '/resources', label: 'Ressources', icon: BookOpen },
   {
     href: '/dashboard',
     label: 'Lab',
@@ -58,7 +56,7 @@ const NAV: NavItem[] = [
 ];
 
 /**
- * Persistent chrome for STOUDENT: community tabs, plus the SignalLab "Lab" tab
+ * Persistent chrome for STOUDENT: community tabs, plus the "Lab" tab
  * whose pages get their own secondary bar. Also renders for visitors, who can
  * read questions and resources before signing up.
  *

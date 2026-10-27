@@ -1,4 +1,6 @@
 """Student profile: the SignalLab identity layered on top of :class:`User`."""
+from datetime import datetime
+
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,6 +32,15 @@ class StudentProfile(Base):
     # teacher is not trusted as such until an admin grants the 'teacher' role.
     member_type: Mapped[str] = mapped_column(
         sa.String(20), init=False, default='student', server_default='student'
+    )
+    # Explicit consent to receive STOUDENT news on WhatsApp (exam dates...).
+    # Separate from the sign-up code: the number may be used for the account
+    # without the member agreeing to messages. Never send to opted-out members.
+    whatsapp_opt_in: Mapped[bool] = mapped_column(
+        sa.Boolean, init=False, default=False, server_default='0', index=True
+    )
+    whatsapp_opt_in_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), init=False, default=None
     )
     # Community reputation, earned from votes and accepted answers.
     reputation: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')

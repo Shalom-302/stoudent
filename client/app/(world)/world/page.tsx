@@ -40,7 +40,7 @@ const HAIRS: Record<string, string> = {
   red: '#8f4429',
 };
 
-/** The SignalLab room: walk the avatar to a bench and open its TP. */
+/** The lab room: walk the avatar to a bench and open its TP. */
 export default function WorldPage() {
   const router = useRouter();
   const [near, setNear] = React.useState<PointId | null>(null);

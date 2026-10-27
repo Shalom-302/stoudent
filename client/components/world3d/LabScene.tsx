@@ -79,7 +79,7 @@ interface LabSceneProps {
 }
 
 /**
- * The SignalLab room.
+ * The lab room.
  *
  * Geometry is built procedurally from `lib/lab3d/specs.ts`, which holds every
  * dimension of the 3D specification. Swapping in a Blender GLB later replaces

@@ -10,6 +10,7 @@ export interface RegisterPayload {
   level?: string;
   email?: string;
   member_type: 'student' | 'teacher';
+  whatsapp_opt_in?: boolean;
 }
 
 /** The API prefixes this to a login refused because the account is unverified. */

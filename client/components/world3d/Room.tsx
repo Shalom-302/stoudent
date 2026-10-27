@@ -215,7 +215,7 @@ function WallSign() {
       ctx.fillRect(0, 0, 10, h);
       ctx.fillStyle = '#20252a';
       ctx.font = '600 46px "IBM Plex Sans", system-ui, sans-serif';
-      ctx.fillText('Signal Lab', 34, 62);
+      ctx.fillText('STOUDENT Lab', 34, 62);
       ctx.fillStyle = '#6d7479';
       ctx.font = '400 24px "IBM Plex Mono", monospace';
       ctx.fillText('Traitement du signal — salle 1', 34, 98);

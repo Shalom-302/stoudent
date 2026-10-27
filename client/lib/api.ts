@@ -13,7 +13,7 @@ export const API_PREFIX = '/api/v1';
 /** Back-office API: the `admin` sub-app, mounted under /admin. */
 export const ADMIN_PREFIX = '/admin/api/v1';
 
-const TOKEN_KEY = 'signallab.access_token';
+const TOKEN_KEY = 'stoudent.access_token';
 
 /**
  * The access token lives in memory first and in localStorage as a fallback for

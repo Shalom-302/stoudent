@@ -155,6 +155,7 @@ class SignManagerService:
             'filiere': profile.filiere,
             'member_type': profile.member_type,
             'reputation': profile.reputation,
+            'whatsapp_opt_in': profile.whatsapp_opt_in,
             'firstname': user.firstname,
             'lastname': user.lastname,
             'institution': profile.institution,

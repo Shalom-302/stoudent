@@ -8,6 +8,7 @@ export interface UpdateProfilePayload {
   institution?: string | null;
   level?: string | null;
   filiere?: string | null;
+  whatsapp_opt_in?: boolean;
 }
 
 export interface AvatarPayload {

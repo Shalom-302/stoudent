@@ -1,18 +1,28 @@
 /** Shared vocabulary for STOUDENT: filières, levels, report reasons. */
 
-/** Offered at sign-up and in the filters; members can type another one. */
-export const FILIERES = [
-  'RIT',
-  'IDA',
-  'Télécommunications',
-  'Électronique',
-  'Génie civil',
-  'Génie électrique',
-  'Gestion',
-  'Comptabilité',
-  'Marketing',
-  'Logistique',
-];
+/**
+ * The BTS filières STOUDENT opens with. The code is what is stored and shown
+ * on posts; the name explains it to someone from another filière. Members can
+ * still type a filière missing from this list.
+ */
+export const BTS_FILIERES = [
+  { code: 'IDA', name: 'Informatique Développeur d’Application' },
+  { code: 'RIT', name: 'Réseaux Informatiques et Télécommunications' },
+  { code: 'FCGE', name: 'Finance Comptabilité et Gestion des Entreprises' },
+  { code: 'GC', name: 'Gestion Commerciale' },
+  { code: 'RHC', name: 'Ressources Humaines et Communication' },
+  { code: 'LOG', name: 'Logistique' },
+  { code: 'AD', name: 'Assistanat de Direction' },
+  { code: 'ELT', name: 'Électrotechnique' },
+] as const;
+
+export const FILIERES: string[] = BTS_FILIERES.map((f) => f.code);
+
+/** "IDA" -> "IDA · Informatique Développeur d’Application" (unknown codes as-is). */
+export function filiereLabel(code: string): string {
+  const known = BTS_FILIERES.find((f) => f.code.toLowerCase() === code.toLowerCase());
+  return known ? `${known.code} · ${known.name}` : code;
+}
 
 export const LEVELS = ['BTS 1', 'BTS 2', 'Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2', 'Ingénieur'];
 

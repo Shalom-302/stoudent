@@ -35,7 +35,8 @@ EXCERPT_LENGTH = 220
 VIEW_WINDOW_SECONDS = 3600
 
 # Shown in the filters before the community has created its own.
-DEFAULT_FILIERES = ['RIT', 'IDA', 'Télécommunications', 'Génie civil', 'Gestion', 'Électronique']
+# The BTS filières STOUDENT opens with (codes; names live in client/lib/community.ts).
+DEFAULT_FILIERES = ['IDA', 'RIT', 'FCGE', 'GC', 'RHC', 'LOG', 'AD', 'ELT']
 
 def _excerpt(text: str) -> str:
     flat = ' '.join(text.split())

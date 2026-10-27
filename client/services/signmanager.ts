@@ -37,6 +37,7 @@ export interface ManagedStudent {
   filiere: string | null;
   member_type: 'student' | 'teacher';
   reputation: number;
+  whatsapp_opt_in: boolean;
   firstname: string | null;
   lastname: string | null;
   institution: string | null;

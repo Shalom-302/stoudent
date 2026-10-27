@@ -13,12 +13,12 @@ import { labService } from '@/services/labs';
 const SLUG = 'telecom-lab';
 
 const ROADMAP = [
-  { version: 'V0.5', body: 'TelecomLab : PABX, SIP, VoIP, puis GSM.' },
+  { version: 'V0.5', body: 'Labo Télécom : PABX, SIP, VoIP, puis GSM.' },
   { version: 'V1', body: 'Laboratoires collaboratifs, sessions de classe, campus virtuel RIT.' },
 ];
 
-/** TelecomLab preview — visible from day one, playable later (section 12). */
-export default function TelecomLabPage() {
+/** Labo Télécom preview — visible from day one, playable later (section 12). */
+export default function TelecomLaboPage() {
   const lab = useQuery({ queryKey: ['lab', SLUG], queryFn: () => labService.detail(SLUG) });
 
   const equipment = lab.data?.scene_config?.equipment ?? [];

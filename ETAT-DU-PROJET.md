@@ -11,7 +11,7 @@ Tout SignalLab est conservé. Ce qui a été ajouté par-dessus :
 |---|---|
 | **Comptes** | Identifiant = numéro WhatsApp (+ pseudo public, filière obligatoire, établissement, niveau, « étudiant » ou « professeur »). E-mail facultatif ; les anciens comptes se connectent toujours par e-mail. |
 | **OTP WhatsApp** | Porté de shaapi (gowa). `OTP_ENABLED=false` par défaut ; à `true`, le compte reste bloqué jusqu'au code. |
-| **Communauté** | Fil de questions (filtres filière / matière / tag, recherche plein texte française), réponses, votes, meilleure réponse, réputation, ressources (lien + source, jamais le contenu), signalements (masquage auto à 3). Lecture publique, écriture connectée. |
+| **Communauté** | Fil de questions (filtres filière / matière / tag, recherche plein texte française), réponses, votes, meilleure réponse, réputation, ressources (fermées au lancement, `COMMUNITY_RESOURCES_ENABLED`), signalements (masquage auto à 3). Lecture publique, écriture connectée. |
 | **Professeurs** | Se déclarer prof ne donne aucun droit. Un admin attribue le rôle `teacher` dans SignManager, qui débloque « Validée par un professeur ». |
 | **SignManager** | Recherche par pseudo / numéro, onglet **Modération** (masquer, rejeter, rétablir). |
 | **Front** | Landing GSAP en noir et blanc, couleurs Kortex comme security.kortex.sbs (portée de shaapi), « Backed by Kortex », pages `/questions`, `/questions/ask`, `/questions/[id]`, `/resources`, `/regles`. Le labo vit sous l'onglet Lab avec sa sous-navigation. |

@@ -24,6 +24,7 @@ class UpdateStudentProfileParam(StudentProfileBase):
 
     firstname: str | None = Field(default=None, max_length=100)
     lastname: str | None = Field(default=None, max_length=100)
+    whatsapp_opt_in: bool | None = None
 
 
 class AvatarDetail(SchemaBase):
@@ -73,6 +74,7 @@ class StudentDetail(StudentProfileBase):
     phone: str | None = None
     member_type: str = 'student'
     reputation: int = 0
+    whatsapp_opt_in: bool = False
     avatar: AvatarDetail | None = None
 
 

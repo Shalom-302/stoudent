@@ -106,6 +106,8 @@ class UserRegister(SchemaBase):
     institution: str | None = Field(default=None, max_length=200)
     level: str | None = Field(default=None, max_length=100)
     member_type: str = 'student'
+    # Consent to STOUDENT news on WhatsApp; unticked by default.
+    whatsapp_opt_in: bool = False
 
     _check_password = field_validator('password')(validate_password_strength)
 

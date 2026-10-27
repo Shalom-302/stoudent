@@ -47,6 +47,7 @@ class ManagedStudent(SchemaBase):
     filiere: str | None = None
     member_type: str = 'student'
     reputation: int = 0
+    whatsapp_opt_in: bool = False
     firstname: str | None = None
     lastname: str | None = None
     institution: str | None = None

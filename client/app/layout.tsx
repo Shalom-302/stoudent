@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: '%s · STOUDENT',
   },
   description:
-    'Posez vos questions, partagez vos connaissances et entraidez-vous gratuitement, entre étudiants et professeurs de toutes les filières.',
+    'Posez vos questions, partagez vos connaissances et entraidez-vous gratuitement, entre étudiants et professeurs de toutes les filières du BTS.',
 };
 
 export const viewport: Viewport = {

@@ -277,7 +277,12 @@ function displayName(student: ManagedStudent): string {
 /** Contact + filière under the name: how an admin recognises a member. */
 function contactLine(student: ManagedStudent): string {
   const contact = student.phone ? `+${student.phone}` : student.email;
-  return [contact, student.filiere, student.member_type === 'teacher' ? 'se déclare prof' : null]
+  return [
+    contact,
+    student.filiere,
+    student.member_type === 'teacher' ? 'se déclare prof' : null,
+    student.whatsapp_opt_in ? 'infos WhatsApp ✓' : null,
+  ]
     .filter(Boolean)
     .join(' · ');
 }

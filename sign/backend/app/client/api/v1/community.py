@@ -20,6 +20,8 @@ from backend.app.client.schema.community import (
 )
 from backend.app.client.service.community_service import community_service
 from backend.common.enums import Role as RoleEnum
+from backend.common.exception import errors
+from backend.core.conf import settings
 from backend.common.response.response_schema import ResponseModel, response_base
 from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.roles import require_roles
@@ -28,6 +30,11 @@ router = APIRouter(prefix='/community', tags=['Community'])
 
 XIdPath = Annotated[str, Path(min_length=8, max_length=32, pattern=r'^[a-z0-9]+$')]
 Text = Annotated[str | None, Query(max_length=100)]
+
+
+def _resources_open() -> None:
+    if not settings.COMMUNITY_RESOURCES_ENABLED:
+        raise errors.NotFoundError(msg='Les ressources ne sont pas encore ouvertes.')
 
 
 def _viewer_id(request: Request) -> int | None:
@@ -121,7 +128,9 @@ async def vote(request: Request, obj: VoteParam) -> ResponseModel:
     return response_base.success(request=request, data=data)
 
 
-@router.get('/resources', summary='Shared learning resources')
+@router.get(
+    '/resources', summary='Shared learning resources', dependencies=[Depends(_resources_open)]
+)
 async def list_resources(
     request: Request,
     filiere: Text = None,
@@ -138,7 +147,7 @@ async def list_resources(
 @router.post(
     '/resources',
     summary='Share a resource link',
-    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=10, hours=1))],
+    dependencies=[Depends(_resources_open), DependsJwtAuth, Depends(RateLimiter(times=10, hours=1))],
 )
 async def create_resource(request: Request, obj: CreateResourceParam) -> ResponseModel:
     data = await community_service.create_resource(user_id=request.user.id, obj=obj)

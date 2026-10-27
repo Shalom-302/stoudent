@@ -12,7 +12,7 @@ import { labService } from '@/services/labs';
 
 const SLUG = 'signal-lab';
 
-export default function SignalLabPage() {
+export default function SignalLaboPage() {
   const lab = useQuery({ queryKey: ['lab', SLUG], queryFn: () => labService.detail(SLUG) });
 
   return (

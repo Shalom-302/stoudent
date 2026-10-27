@@ -100,6 +100,9 @@ class AuthService:
             profile.institution = obj.institution
             profile.level = obj.level
             profile.member_type = obj.member_type
+            if obj.whatsapp_opt_in:
+                profile.whatsapp_opt_in = True
+                profile.whatsapp_opt_in_at = timezone.now()
             await db.flush()
 
             # WhatsApp OTP gate: create the account UNVERIFIED, send the code, and
@@ -169,7 +172,15 @@ class AuthService:
                 user_x_id = current_user.x_id
                 email = current_user.email or current_user.phone
 
+                fail_key = f'{settings.LOGIN_FAIL_REDIS_PREFIX}:{user_x_id}'
+                if int(await redis_client.get(fail_key) or 0) >= settings.LOGIN_MAX_FAILURES:
+                    raise errors.AuthorizationError(
+                        msg='Trop de tentatives sur ce compte. Réessayez dans 15 minutes '
+                        'ou utilisez « Mot de passe oublié ».')
                 if not password_verify(obj.password + current_user.salt, current_user.password):
+                    failures = await redis_client.incr(fail_key)
+                    if failures == 1:
+                        await redis_client.expire(fail_key, settings.LOGIN_LOCK_SECONDS)
                     raise errors.AuthorizationError(msg=translator.t('auth.incorrect_credential'))
                 elif not current_user.status:
                     raise errors.AuthorizationError(msg=translator.t('auth.account_locked'))
@@ -181,7 +192,9 @@ class AuthService:
                 refresh_token = await create_refresh_token(str(user_x_id), settings.TOKEN_MULTI_LOGIN)
 
             except errors.NotFoundError as e:
-                raise errors.NotFoundError(msg=e.msg)
+                # Same 401 as a wrong password: the login form must not reveal
+                # which numbers have an account.
+                raise errors.AuthorizationError(msg=e.msg)
             except (errors.AuthorizationError, errors.CustomError) as e:
                 task = BackgroundTask(
                     LoginLogService.create,
@@ -213,6 +226,7 @@ class AuthService:
                 )
                 # await redis_client.delete(f'{user_settings.CAPTCHA_LOGIN_REDIS_PREFIX}:{request.state.ip}')
 
+                await redis_client.delete(f'{settings.LOGIN_FAIL_REDIS_PREFIX}:{user_x_id}')
                 await user_dao.update_login_time_by_x_id(db, user_x_id)
                 # Same flags as everywhere else: the previous samesite='none'
                 # without Secure was silently dropped by browsers.
@@ -299,6 +313,7 @@ class AuthService:
         await redis_client.delete_prefix(f'{settings.TOKEN_REDIS_PREFIX}:{user_x_id}:')
         await redis_client.delete_prefix(f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_x_id}:')
         await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{user_x_id}')
+        await redis_client.delete(f'{settings.LOGIN_FAIL_REDIS_PREFIX}:{user_x_id}')
         return {'reset': True}
 
     @staticmethod

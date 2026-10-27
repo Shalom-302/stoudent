@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Règles de la communauté' };
 const RULES = [
   {
     title: 'L’entraide reste gratuite',
-    text: 'Poser une question, répondre, partager une ressource : tout ce qui sert l’entraide est et restera gratuit. Pas de vente de corrigés, pas de publicité.',
+    text: 'Poser une question, répondre, voter : tout ce qui sert l’entraide est et restera gratuit. Pas de vente de corrigés, pas de publicité.',
   },
   {
     title: 'Toutes les filières sont les bienvenues',
@@ -21,8 +21,8 @@ const RULES = [
     text: 'Utilisez la recherche : votre question a peut-être déjà une réponse. Sinon, montrez ce que vous avez essayé.',
   },
   {
-    title: 'On respecte les sources',
-    text: 'Une ressource partagée garde son titre, son lien et son auteur ou organisme d’origine. On partage le lien, on ne recopie pas le contenu.',
+    title: 'On cite ses sources',
+    text: 'Quand une réponse s’appuie sur un cours, un livre ou un site, on le cite. On explique avec ses mots, on ne recopie pas des pages entières.',
   },
   {
     title: 'On reste courtois',

@@ -62,7 +62,7 @@ def storage_init() -> int:
 
 
 async def seed_labs() -> int:
-    """Seed the SignalLab catalogue (labs, experiments, badges). Idempotent."""
+    """Seed the lab catalogue (labs, experiments, badges). Idempotent."""
     from backend.seeder.signallab import seed
 
     return await seed()
@@ -81,7 +81,7 @@ def main() -> int:
     sub.add_parser("storage-init", help="Ensure the object-storage bucket exists")
 
     sub.add_parser(
-        "seed-labs", help="Seed the SignalLab catalogue (labs, experiments, badges)"
+        "seed-labs", help="Seed the lab catalogue (labs, experiments, badges)"
     )
 
     args = parser.parse_args()

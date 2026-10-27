@@ -288,7 +288,7 @@ export function Computer({ signal }: { signal: SignalSettings }) {
       ctx.fillRect(0, 0, w, h * 0.09);
       ctx.fillStyle = '#8d979d';
       ctx.font = '500 20px "IBM Plex Sans", sans-serif';
-      ctx.fillText('SignalLab — poste etudiant', 16, h * 0.062);
+      ctx.fillText('STOUDENT Lab — poste etudiant', 16, h * 0.062);
       drawSpectrum(ctx, w, h, signal);
     },
     [signal],

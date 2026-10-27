@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/features/auth/auth-provider';
 import { ApiError } from '@/lib/api';
-import { FILIERES, LEVELS } from '@/lib/community';
+import { BTS_FILIERES, LEVELS } from '@/lib/community';
 import { cn } from '@/lib/utils';
 import { authService, OTP_REQUIRED_PREFIX } from '@/services/auth';
 
@@ -50,6 +50,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = React.useState('');
   const [confirm, setConfirm] = React.useState('');
   const [terms, setTerms] = React.useState(false);
+  const [whatsappOptIn, setWhatsappOptIn] = React.useState(false);
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   // Set when the API asks for the WhatsApp code: we switch to that screen.
@@ -88,6 +89,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           institution: institution.trim() || undefined,
           level: level || undefined,
           member_type: memberType,
+          whatsapp_opt_in: whatsappOptIn,
         });
         if (challenge) {
           setOtpPhone(challenge.phone);
@@ -211,9 +213,9 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <option value="" disabled>
                   Choisir…
                 </option>
-                {FILIERES.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
+                {BTS_FILIERES.map((f) => (
+                  <option key={f.code} value={f.code}>
+                    {f.code} · {f.name}
                   </option>
                 ))}
                 <option value={OTHER}>Autre filière…</option>
@@ -267,7 +269,6 @@ export function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="07 88 01 62 04"
             />
-            <p className="text-xs text-ink-400">Ancien compte SignalLab ? Votre e-mail fonctionne aussi.</p>
           </div>
         )}
 
@@ -309,6 +310,22 @@ export function AuthForm({ mode }: AuthFormProps) {
             <input
               type="checkbox"
               className="mt-0.5 h-4 w-4 accent-ink-900"
+              id="whatsapp-opt-in"
+              checked={whatsappOptIn}
+              onChange={(e) => setWhatsappOptIn(e.target.checked)}
+            />
+            <span>
+              Je veux recevoir sur WhatsApp les infos utiles de STOUDENT (dates d’examens, annonces).
+              Facultatif, modifiable à tout moment dans mon profil.
+            </span>
+          </label>
+        )}
+        {isRegister && (
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-ink-500">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 accent-ink-900"
+              id="terms"
               checked={terms}
               onChange={(e) => setTerms(e.target.checked)}
             />

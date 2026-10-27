@@ -5,8 +5,8 @@ import { BackedByKortex } from '@/components/brand/backed-by-kortex';
 const POINTS = [
   'Posez vos questions de cours et d’exercices',
   'Des réponses expliquées, votées par la communauté',
-  'Des ressources fiables, triées par filière',
-  'Le labo virtuel SignalLab, inclus',
+  'Toutes les filières du BTS, pas seulement la RIT',
+  'Un labo virtuel 3D pour pratiquer, inclus',
 ];
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -21,8 +21,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <span className="text-white/55">Quelqu’un est déjà passé par là.</span>
           </h1>
           <p className="mt-5 max-w-md text-lg text-white/70">
-            STOUDENT réunit les étudiants et les professeurs de toutes les filières pour s’entraider,
-            gratuitement.
+            STOUDENT réunit les étudiants et les professeurs de toutes les filières du BTS (IDA, RIT,
+            FCGE, Gestion commerciale, Logistique…) pour s’entraider, gratuitement.
           </p>
           <ul className="mt-10 space-y-4">
             {POINTS.map((p) => (

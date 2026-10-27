@@ -169,6 +169,15 @@ class Settings(BaseSettings):
     GOWA_BASIC_PASS: str = ''
     GOWA_TIMEOUT: int = 20
 
+    # Per-account brute-force guard, on top of the per-IP limit (which a
+    # botnet or a shared carrier IP makes useless on its own).
+    LOGIN_MAX_FAILURES: int = 8
+    LOGIN_LOCK_SECONDS: int = 15 * 60
+    LOGIN_FAIL_REDIS_PREFIX: str = 'stoudent:login_fail'
+
+    # Shared resources (links): closed for the launch.
+    COMMUNITY_RESOURCES_ENABLED: bool = False
+
     # Log
     LOG_ROOT_LEVEL: str = 'NOTSET'
     LOG_STD_FORMAT: str = (

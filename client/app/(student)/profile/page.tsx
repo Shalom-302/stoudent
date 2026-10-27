@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input, Textarea } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FILIERES } from '@/lib/community';
+import { BTS_FILIERES } from '@/lib/community';
 import { studentService, type UpdateProfilePayload } from '@/services/student';
 
 export default function ProfilePage() {
@@ -27,6 +27,7 @@ export default function ProfilePage() {
       institution: profile.data.institution,
       level: profile.data.level,
       filiere: profile.data.filiere,
+      whatsapp_opt_in: profile.data.whatsapp_opt_in,
       bio: profile.data.bio,
     });
   }, [profile.data, dirty]);
@@ -119,8 +120,10 @@ export default function ProfilePage() {
                   maxLength={100}
                 />
                 <datalist id="profile-filieres">
-                  {FILIERES.map((f) => (
-                    <option key={f} value={f} />
+                  {BTS_FILIERES.map((f) => (
+                    <option key={f.code} value={f.code}>
+                      {f.name}
+                    </option>
                   ))}
                 </datalist>
               </div>
@@ -143,6 +146,23 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
+
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-ink-200 p-3 text-sm text-ink-600">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-ink-900"
+                checked={Boolean(form.whatsapp_opt_in)}
+                onChange={(event) => {
+                  setDirty(true);
+                  setForm((previous) => ({ ...previous, whatsapp_opt_in: event.target.checked }));
+                }}
+              />
+              <span>
+                <span className="font-medium text-ink-900">Infos STOUDENT sur WhatsApp</span>
+                <br />
+                Dates d’examens et annonces importantes. Votre numéro n’est jamais affiché ni partagé.
+              </span>
+            </label>
 
             <div className="space-y-1.5">
               <Label htmlFor="bio">Bio</Label>

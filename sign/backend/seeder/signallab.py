@@ -27,7 +27,7 @@ from backend.models import Achievement, Experiment, Lab
 LABS: list[dict] = [
     {
         'slug': 'signal-lab',
-        'name': 'SignalLab',
+        'name': 'Labo Signal',
         'type': LabType.signal.value,
         'status': LabStatusType.available.value,
         'order': 1,
@@ -51,7 +51,7 @@ LABS: list[dict] = [
     },
     {
         'slug': 'telecom-lab',
-        'name': 'TelecomLab',
+        'name': 'Labo Télécom',
         'type': LabType.telecom.value,
         # Present in the world from day one, but explicitly not playable:
         # section 12 of the fiche technique asks for a preview, not a stub.
@@ -681,8 +681,8 @@ ACHIEVEMENTS: list[dict] = [
     },
     {
         'slug': 'signal-lab-complet',
-        'name': 'SignalLab complet',
-        'description': 'Terminer toutes les expériences publiées de SignalLab.',
+        'name': 'Labo Signal complet',
+        'description': 'Terminer toutes les expériences publiées du labo Signal.',
         'icon': 'trophy',
         'xp_reward': 150,
         'criteria': {

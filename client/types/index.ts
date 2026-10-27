@@ -64,6 +64,7 @@ export interface Student {
   filiere: string | null;
   member_type: 'student' | 'teacher';
   reputation: number;
+  whatsapp_opt_in: boolean;
   avatar: Avatar | null;
 }
 

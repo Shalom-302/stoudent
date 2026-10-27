@@ -15,6 +15,7 @@ from backend.crud.crud_achievement import achievement_dao, student_achievement_d
 from backend.crud.crud_lab import lab_dao
 from backend.crud.crud_student import avatar_dao, student_dao
 from backend.crud.crud_student_experiment import student_experiment_dao
+from backend.utils.timezone import timezone
 from backend.crud.crud_user import user_dao
 from backend.database.db_postgres import async_db_session
 from backend.models import StudentProfile
@@ -66,6 +67,11 @@ class StudentService:
                     setattr(profile.user, field, data.pop(field))
                 else:
                     data.pop(field, None)
+            # Consent is timestamped: we must be able to say when it was given.
+            opt_in = data.pop('whatsapp_opt_in', None)
+            if opt_in is not None and opt_in != profile.whatsapp_opt_in:
+                profile.whatsapp_opt_in = opt_in
+                profile.whatsapp_opt_in_at = timezone.now() if opt_in else None
             for field, value in data.items():
                 setattr(profile, field, value)
 
@@ -221,6 +227,7 @@ class StudentService:
             'filiere': profile.filiere,
             'member_type': profile.member_type,
             'reputation': profile.reputation,
+            'whatsapp_opt_in': profile.whatsapp_opt_in,
             'total_xp': profile.total_xp,
             'level_number': profile.level_number,
             'created_time': profile.created_time,
