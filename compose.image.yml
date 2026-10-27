@@ -1,0 +1,132 @@
+# Production compose for Dokploy: pulls the prebuilt images from GHCR (built by
+# .github/workflows/build.yml) instead of building on the VPS. Same setup as
+# shaapi.
+#
+# Image names follow the GitHub repo: ghcr.io/<owner>/<repo> (API) and
+# ghcr.io/<owner>/<repo>-web (client). Override STOUDENT_IMAGE if the repo is
+# not shalom-302/stoudent.
+#
+# Set the secrets in the Dokploy "Environment" panel. In prod the API REFUSES to
+# boot with the dev defaults, so TOKEN_SECRET_KEY, OPERA_LOG_ENCRYPT_SECRET_KEY,
+# POSTGRES_PASSWORD, MINIO_SECRET_KEY and PUBLIC_DOMAIN are mandatory.
+#
+# In Dokploy, point the public domain at service `web`, port 3000. The API has
+# no public route: the browser calls the web origin, which proxies /api/v1 and
+# /admin/api/v1 to the API over the internal network.
+
+services:
+  api:
+    image: ${STOUDENT_IMAGE:-ghcr.io/shalom-302/stoudent}:latest
+    pull_policy: always  # :latest is mutable: always fetch the fresh CI build
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-prod}
+      # Keep true: the SignalLab tables are created by create_all at startup,
+      # the Alembic history only carries the changes made on top of them.
+      - DB_AUTO_CREATE=true
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE:-stoudent}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-stoudentadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-stoudent}
+      - MINIO_CLOUD_URL=${MINIO_CLOUD_URL:-https://${PUBLIC_DOMAIN}}
+      # ⚠️ MANDATORY (forgeable JWTs otherwise):
+      - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY}
+      - OPERA_LOG_ENCRYPT_SECRET_KEY=${OPERA_LOG_ENCRYPT_SECRET_KEY}
+      # Host header guard: the web proxy calls http://stoudent-api:8000.
+      - TRUSTED_HOSTS=["stoudent-api","${PUBLIC_DOMAIN}"]
+      - CORS_ALLOWED_ORIGINS=["https://${PUBLIC_DOMAIN}"]
+      # Refresh cookie: first-party on the web origin, sent over HTTPS only.
+      - COOKIE_SECURE=true
+      - COOKIE_SAMESITE=lax
+      # WhatsApp OTP at sign-up (gowa). OTP_ENABLED=true turns the gate on.
+      - OTP_ENABLED=${OTP_ENABLED:-false}
+      - GOWA_URL=${GOWA_URL:-}
+      - GOWA_BASIC_USER=${GOWA_BASIC_USER:-}
+      - GOWA_BASIC_PASS=${GOWA_BASIC_PASS:-}
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # Unique alias: Dokploy also attaches services to the shared dokploy-network,
+    # where a bare "api" can resolve to ANOTHER project's api container.
+    networks:
+      stoudent:
+        aliases: [stoudent-api]
+      # WhatsApp gateway (gowa) network, shared with shaapi, so the API can send
+      # sign-up OTPs via http://shalom-gowa:3080. Create once on the VPS if missing.
+      whatsapp-shared-network: {}
+
+  web:
+    image: ${STOUDENT_IMAGE:-ghcr.io/shalom-302/stoudent}-web:latest
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      - API_INTERNAL_URL=http://stoudent-api:8000
+    expose:
+      - "3000"
+    depends_on:
+      - api
+    networks: [stoudent]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DATABASE:-stoudent}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DATABASE:-stoudent}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [stoudent]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [stoudent]
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-stoudentadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+    volumes:
+      - miniodata:/data
+    networks: [stoudent]
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+
+networks:
+  stoudent:
+  # Created once on the VPS (already there if shaapi uses it):
+  #   docker network create whatsapp-shared-network
+  whatsapp-shared-network:
+    external: true

@@ -1,0 +1,21 @@
+node_modules/
+.next/
+out/
+build/
+.DS_Store
+*.pem
+
+.env
+.env.local
+.env*.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Scratch build dir used by NEXT_DIST_DIR
+.next-check/

@@ -1,0 +1,237 @@
+# Résumé exécutif  
+Les plateformes de laboratoires virtuels se multiplient pour rendre les sciences accessibles à distance. Parmi les leaders on trouve **Labster** et **PraxiLabs**, dont les simulations 3D immersives (biosciences, physique, chimie, etc.) améliorent l’engagement des étudiants. En Afrique de l’Ouest, l’**UVCI** développe un « métaverse universitaire », tandis que des acteurs locaux (e.g. PeleAI/K. Koné) explorent des solutions similaires. Parallèlement, des projets open-source comme **Mozilla Hubs** (Hubs Foundation) fournissent des espaces 3D collaboratifs génériques accessibles depuis tout navigateur.  
+
+Notre rapport compare ces plateformes sur plusieurs axes : public visé, modèle économique, traction commerciale, puis piles techniques et chaînes d’assets (Unity/Blender/WebGL vs. Web frameworks). Nous analysons aussi les bonnes pratiques UI/UX (taille des avatars, distances d’interaction, budget trièdrique, etc.), les normes d’animation (squelettes humanoïdes, retargeting, cibles IK), la scalabilité Web (CDN, streaming glTF, serveurs, WebSocket/WebRTC) et les fonctionnalités pédagogiques (tableaux de bord enseignants, notation automatique, tutorat IA). Enfin, nous abordons la sécurité et l’accessibilité (support mobile/VR, alternatives basse consommation) puis fournissons une check-list Blender→GLB et Babylon.js, avant de recommander un plan d’action pour **SignalLab MVP**.  
+
+# 1. Plateformes principales
+
+- **[Labster](https://www.labster.com)** (USA) – Pionnier du virtuel éducatif STEM. Propose des centaines de simulations 3D réalistes (bio, chimie, physique, élec., etc.) alignées sur les programmes universitaires. Cible principalement les universités et les cours de BAC+3+ (STEM). Modèle : licence par établissement (SaaS), avec intégration LMS. Traction : utilisé par des milliers d’universités dans le monde. Labster insiste sur ses bilans pédagogiques (par ex. +14% de taux de réussite en ligne).  
+
+- **[PraxiLabs](https://praxilabs.com)** (Koweït/Egypte/USA) – Laboratoires virtuels 3D couvrant physique, chimie, biologie, etc. Cible écoles secondaires et universités. Offre 210+ simulations couvertes (20+ disciplines scientifiques). Modèle : abonnement institutions, avec compte gratuit limité (3 simul.) pour tester. Traction : revendique +2.5M d’utilisateurs et réduction de 60% des coûts de labo. Intègre un assistant IA “Oxi” et un générateur de quiz, avec rapports analytiques détaillés par étudiant.  
+
+- **META-UVCI (Univers. Virtuelle de Côte d’Ivoire)** – Projet national de campus virtuel. Présente des espaces 3D immersifs (campus, amphis, labos) accessibles via navigateur (WebGL/VR). Un « campus 3D » est en cours de développement pour l’enseignement à distance. Cible : étudiants Ivoiriens (BTS, Licence) et enseignants locaux. Modèle : Public, financé par l’État. Traction : en phase pilote, très médiatisé localement.  
+
+- **PeleAI (Côte d’Ivoire)** – Startup locale (Koné Pele) proposant des expériences éducatives (télécoms, labos virtuels). Peu d’infos publiques sur la techno (probablement WebGL). Vise BTS/ écoles d’ingénieurs. Business model : formules SaaS ou licence. Traction : jeune structure, en recherche de financements (2026).  
+
+- **Mozilla Hubs / Hubs Foundation** – Plateforme open-source de collaboration 3D générique. Créez gratuitement des « salles » virtuelles accessibles par URL via le navigateur. Cible : généraliste (conférences, cours, événements). Modèle : gratuit, code source public (CC-BY-SA). Traction : utilisée par une communauté mondiale d’éducateurs et artistes (GitHub actif).  
+
+- **LabXchange (Harvard)** – Portail d’apprentissage des sciences (notamment biologie) en mode cours/microcours, parfois avec simulations 3D. Moins orienté VR; plutôt contenu et évaluation en ligne.  
+
+- **Autres concurrents** (non exhaustif) : *Visible Body / BioDigital* (anatomie 3D), *Neosem* (laboratoires virtuels français), *OLabs* (Inde), *RenderDealer* (chymo), etc. Chacune a son rayon (p. ex. biologie moléculaire, labos de langue, etc.).  
+
+| **Plateforme**      | **Public / domaines**     | **Modèle & Traction**                                                                 | **Site officiel**                    |
+|---------------------|---------------------------|---------------------------------------------------------------------------------------|--------------------------------------|
+| Labster             | Universités STEM          | SaaS B2B; utilisé par milliers d’établissements (croissance >10 %/an) | https://www.labster.com              |
+| PraxiLabs           | Écoles sup. & Lycées      | SaaS B2B; >2000 écoles “confiantes”, expos internationaux (Startups, hackathons)    | https://praxilabs.com                |
+| META-UVCI           | Étudiants ivoiriens (DUT, BTS, Lic) | Service public (no profit); campus 3D en dev.                                           | *(UVCI, pas de page unique)*         |
+| PeleAI              | Étudiants ivoiriens (RIT) | Startup; prototype labo virtuel télécoms; pas de chiffres publiés                     | *site privé (non listé)*            |
+| Mozilla Hubs / HubsFoundation | Tous publics (educatif, pro) | Open source; hébergement Cloud et auto-hébergement. Populaire en éducation à distance | https://hubs.foundation            |
+| LabXchange (Harvard) | Lycéens/universitaires bio| Plateforme gratuite de ressources; pas de môde multimédia immersif                   | https://www.labxchange.org/         |  
+
+# 2. Stack technique et pipeline d’assets  
+
+## Moteurs et formats  
+- **Labster, UbiSim, etc.** – Moteur Unity 3D (C#) : base de développement unique VR/Web/Mobile. Déploiement : WebGL (navigateur), IL2CPP pour mobiles, stand-alone VR (Oculus/Quest). Utilise le pipeline Unity URP (Universal Render Pipeline) et l’**XR Interaction Toolkit** pour interactions immersives. Content creation via Unity Editor (import FBX/OBJ d’assets Blender/3ds, assembly, scripting). Les assets 3D (labos, instruments) sont triés et streamés via **Unity Addressables** pour réduire la taille des builds.  
+
+- **PraxiLabs** – Probablement Unity/WebGL similaire (leur site mentionne apps WebGL & mobile). Fournit un client Web (WebGL) qui tourne dans le navigateur. On importe des modèles 3D (Blender→FBX/GLB) dans leur éditeur propriétaire, puis on publie sur serveur.  
+
+- **Mozilla Hubs (HubsFoundation)** – Basé sur **A-Frame** (framework WebVR/Three.js). Les scènes sont créées dans l’éditeur web *Spoke* (exporte des fichiers glTF/GLB). Hubs charge ces GLB dynamiquement en WebGL. Tech stack client : JavaScript + A-Frame (Three.js), audio spatialisé via WebRTC. Back-end : serveur Node.js + MongoDB (gestion des rooms).  
+
+- **Pipeline d’assets** – Dans tous les cas, on modélise dans Blender (ou Maya) puis on exporte en formats standards glTF/GLB (pour Hubs, Babylon.js) ou FBX/OBJ (pour Unity). On applique le PBR workflow (Principal BSDF ou Standard Shader), on bake éventuellement les lights. Pour l’édition, Unity importe FBX/GLTF (par ex. Unity engine nativement ou via plugin glTFast), Hubs importe GLB (glTF 2.0). Pour un jeu web (Babylon.js), on chargerait des GLB optimisés (vérifier Y-up, unités).  
+
+## Frontend Web et backend  
+- **WebGL/Web** : Labster embed son client Unity WebGL dans un site (peut-être React/Angular pour UI). PraxiLabs idem. Hubs est pure JS/A-Frame. SignalLab envisagé en **Babylon.js** (WebGL) ou **React Three Fiber** (Three.js), intégré dans Next.js.  
+- **Backend** : Souvent très classique. Labster et PraxiLabs ont API (probablement Node/Python/Java/Rails) pour la gestion utilisateurs, progression, quizz. SignalLab prévoit **FastAPI (Python)**+Shaapi avec base PostgreSQL, moteur scientifique NumPy/SciPy. LMS intégration (LTI) possible. Services temps réel (ex: WebSocket pour multi) sont à ajouter ultérieurement. Des solutions tierces (Redis pub/sub pour notifs, Qdrant/LLM pour IA) complèteront éventuellement.  
+
+| Plateforme        | Moteur     | Format 3D      | Web / App        | Backend           | Réseau temps réel      |
+|-------------------|------------|----------------|------------------|-------------------|------------------------|
+| Labster           | Unity 3D   | Unity Asset    | WebGL, VR, iOS/Android (IL2CPP) | Inconnu (API internes) | Point-à-point (sync cours) |
+| PraxiLabs         | (prob. Unity)| (Unity Asset) | WebGL client     | API SaaS (node?/py?) | N/A (experiences solo) |
+| Mozilla Hubs      | A-Frame/Three.js | GLTF/GLB   | Web (tous devices) | Node.js + Mongo    | WebRTC (audio), WebSocket (coord.) |
+| SignalLab (cible) | Babylon.js (Three.js) | GLB (exports Blender) | Web (Next.js)  | FastAPI (Python)   | (prévu: WebSocket, Redis) |
+
+# 3. Ergonomie 3D & interactivité (métriques)  
+
+Pour que l’expérience soit crédible et confortable, certains standards industriels sont recommandés :
+
+- **Taille de l’avatar (échelle humaine)** : ~1,70–1,80 m de hauteur. On place le point de vue (camera) à ~1,60 m pour simuler les yeux (taille adulte). Exemple : Oculus recommande ~1,60–1,70 m comme hauteur de vue standard.  
+
+- **Portée/interactions** : distance de saisie confortable ~0,5–0,8 m. Par ex., lorsqu’un étudiant se place devant un oscilloscope, on vise ~0,8 m de distance (comme un humain devant une table). Les zones d’interaction (colliders) peuvent avoir un rayon d’environ 0,5–1,0 m autour des objets cliquables. Au-delà (~1,5–3,0 m), on limite aux mouvements de caméra ou téléportation.  
+
+- **Caméra** : implantée à la hauteur des yeux (~1,6 m), avec un champ de vue (FOV) d’environ 90° horizontal. Near clip ~0.1 m, far clip 100–1000 m. Pas de caméra volante : les mouvements se font en position “tête” de l’avatar.  
+
+- **Placement UI/HUD** : Les éléments 2D (menus, popups) doivent être à hauteur de regard, à 0,5–1,5 m de distance. Un panneau info sur mur peut être à 1–2 m de haut. Les boutons interactifs peuvent surligner un objet ou s’afficher juste au-dessus de la main.  
+
+- **Budget polygonal** : viser un max ~100–200k triangles par scène entière (pour WebGL) réparti ainsi : environ 5–20k par instrument majeur (oscilloscope, générateur, PC), 10k pour le rack, 1–5k pour chaises/shelves. Totals: une salle ~100k–150k tri maximum pour assurer ~30–60fps sur PC/Mobile. Les textures principales ~1024×1024 (2k pour grands plans, 512 pour petits détails). Utiliser des normal maps (FAKE détails).  
+
+- **LOD et collisions** : prévoir 2–3 niveaux de détail pour les gros objets si scènes complexes. Colliders simplifiés (boîtes ou capsules) pour les objets physiques. Distance de déclenchement des animations ~1 m.  
+
+- **Audio spatialisé** : pour plus d’immersion, son 3D positionnel autour de l’étudiant (démo : Hubs propose de l’audio WebRTC spatialisé dans les salles).  
+
+Ces métriques (mensurations humaines, distances de confort) viennent des bonnes pratiques VR/WebGL. Par exemple, le SDK WebXR suggère ~1,7 m comme référence de taille d’avatar et ~0,5 m pour portée de main.  
+
+# 4. Avatars et animations  
+
+Un avatar **humanoïde** réaliste est crucial. Points clés :  
+
+- **Squelette standard** : utiliser une armature de type « Humanoid » (Mixamo, Unity Generic, VRM standard). Structure typique : Hips→Spine (milieu de bassin), Chest, Neck, Head; membres supérieurs : Shoulder→UpperArm→ForeArm→Hand (et éventuellement doigts), membres inférieurs : UpperLeg→LowerLeg→Foot. Racine (`Hips` ou `Root`) idéalement au centre du personnage (bassin). Exemple de hiérarchie glTF/Gltf schema conformance.  
+
+- **Retargeting et noms de joints** : nommer les os selon la convention (ex. “Hips”, “Spine”, “Neck”, “Head”, “LeftArm”, “LeftForeArm”, “LeftHand”, etc.) pour permettre le retargeting automatique entre avatars. Garder la parenté standard (ex. Hips→Spine→Chest→Neck→Head).  
+
+- **Positions de référence** : exporter en pose « T » ou « A » (mains horizontales), qui deviendra la pose de référence (bind pose). S’assurer que les axes Blender Y-up deviennent Y-up dans GLTF. L’échelle (Scale 1.0) doit correspondre à l’échelle du monde (1u=1m).  
+
+- **Motion et animations** : inclure un clip d’animation de marche/de base (peut être inutile si on crée uniquement un FPS sans corps). Prendre en charge la racine (root motion) si déplacement de l’avatar via animation. Pour une base web, l’avatar peut n’utiliser qu’un Animator local (pas de vrai rig IK). Cependant prévoir points de ciblage (par exemple `LeftHandTarget`, `RightHandTarget`, `LookAtTarget`) si on veut implémenter ultérieurement de l’IK simple (ex. main qui atteint un bouton).  
+
+- **Export glTF** : Cocher « Bake Animation » si nécessaire, embed skin et animations. Respecter le format glTF 2.0 (norme WebXR). Offrir la mesh et le skin dans le même fichier ou en séparé selon la scène.  
+
+En résumé, l’avatar doit pouvoir être directement retargeté dans Babylon.js ou Unity. L’équipe Hubs recommande le format VRM (extension de glTF) pour les avatars interchangeables. L’export en GLB (glTF binaire) est optimal pour Babylon.js.  
+
+# 5. Performance et scalabilité Web  
+
+- **Rendu client** : sur navigateurs WebGL/Next.js, la charge 3D est surtout côté client. Optimiser : compresser textures (JPEG/PNG ou WebP, KTX2), utiliser Draco compression sur GLB. LOD et instancing permettent de répéter un même modèle (ex. chaises) à faible coût. Charger l’environnement (campus, pièce) en asynchronously (lazy load) pour éviter les temps de chargement initiaux. Par ex. en Babylon.js, utiliser `SceneLoader.AppendAsync()` pour charger des zones.  
+
+- **Streaming CDN** : héberger tous les assets lourds (GLB, textures, vidéos) sur un CDN (Azure Blob + CDN, AWS S3/CloudFront, Google Cloud Storage, ou GitHub Pages). Utiliser la mise en cache navigateur à long terme. Cela réduit la latence pour les étudiants.  
+
+- **Serveurs & session** : les interactions non-3D passent par l’API (FastAPI). Pour 500 utilisateurs simultanés, un VPS 32 Go / 8 vCPU + Auto-scaling modéré devrait suffire. 10 000 inscrits (avec 500 actifs) pourraient nécessiter un cluster (2–3 serveurs + load balancer + Redis). Les parties stateless (calculs NumPy) peuvent être mises en cache ou shardées. Des services comme Heroku, Azure App Service ou K8s sont envisageables selon budget.  
+
+- **Temps réel** : si on ajoute du multi/joueurs, on utilisera plutôt WebSocket (via Socket.io ou FastAPI WebSockets) pour synchroniser positions/ministates. WebRTC est réservé à l’audio/vidéo (comme Hubs le fait). Sans vrai multiplayer, on se contente d’évènements directs (ex. avatars visibles en même temps dans une salle). Redis Pub/Sub peut gérer les messages de présence.  
+
+- **Mobilité/bas débit** : la solution WebGL garantit l’accessibilité sur mobile (Chrome/Firefox Android, Safari iOS). Il faudra tester sur GPU modestes : viser ~30 FPS sur GPU Intel UHD ou smartphone milieu de gamme. Offrir un rendu « bas détails » automatique pour les appareils lents.  
+
+En résumé : découpler statics (CDN) et dynamiques (API), mettre en cache/aggréger. Par exemple, un étudiant clique sur un instrument → la simulation (Python) tourne en <1s puis rend le graphique. Les serveurs FastAPI supportent plusieurs requêtes simultanées (uvicorn+gunicorn).  
+
+# 6. Aspects pédagogiques & analytics  
+
+- **Suivi étudiant** : enregistrer chaque expérience (paramètres, réponses aux quiz, temps passé) dans la BD. Développer un dashboard enseignant (par ex. Next.js React) pour voir progression globale et individuels (ex. TP complétés, scores).  
+
+- **Auto-correction** : intégrer un système de quiz lié à chaque TP. Par exemple, lors de la validation d’un exercice, le back-end compare le résultat (fréquence calculée, graphique exact) à la solution. Un score est attribué automatiquement. PraxiLabs propose un “quiz builder” intégré permettant questions avant/après le labo, notées et liées au LMS.  
+
+- **Analytique** : collecter des logs (qui a fait quoi). Générer des rapports temps réel (via Grafana/Metabase par ex.) comme le fait Labster (rapports de performance mentionnés pour Oakwood Univ.). Auto-encoder les métriques (taux réussite, temps moyen) pour améliorer le contenu.  
+
+- **Assistant pédagogique** : utiliser la télécommunication en ligne (chatbot IA). Par ex. un tuteur virtuel (chatGPT-like) accessible dans le labo, qui répond aux questions, explique un concept. Labster intègre des aides contextuelles; PraxiLabs son IA « Oxi ». L’architecture SignalLab prévoit un agent LLM interrogé via API (après 2027).  
+
+- **Feedback micro** : encourager l’apprentissage expérientiel avec des badges/défis (gamification). Par exemple, débloquer le Générateur 1 après avoir réussi l’exercice de Fourier. Donner immédiatement du feedback visuel (message “✅ succès!”) pour renforcer l’apprentissage.  
+
+- **Enregistrement de session** : optionnel, enregistrer les actions (démarrer un TP, choix de paramètres, résultats) pour relecture asynchrone par l’étudiant ou pour diagnostic (par ex. rejouer une session via la même scène 3D). Cela favoriserait le réapprentissage.  
+
+Dans l’état actuel, PraxiLabs mentionne des fonctionnalités de suivi et quiz instantanés. Labster insiste sur la « seamless LMS integration » (export de notes, LTI). SignalLab pourra s’inspirer de ces modèles : un connecteur LTI/SCORM pour Moodle et un tableau de bord global.  
+
+# 7. Sécurité, accessibilité et support  
+
+- **Sécurité** : héberger le service sur HTTPS, protéger les données (RGPD pour Côte d’Ivoire/EU). Utiliser auth JWT et rôles (étudiant, prof, admin). Veiller à éviter toute injection (escape des inputs du labo). Aucune info ultra-sensible n’est traitée (ni paiements), donc risque minime.  
+
+- **Accessibilité** : l’interface web doit suivre les principes WCAG minimaux (textes alternatifs pour images, navigation au clavier pour les menus, couleurs contrastées). Par exemple, fournir une alternative texte/voix aux instructions du TP pour malvoyants, si possible. Hubs Foundation souligne que Hubs marche sur PC et mobiles (mode 2D) – SignalLab doit faire de même :  pas d’exclu. 
+
+- **Supports** : accessible sur PC (Chrome/Edge), tablette, et smartphones modernes (Chrome Android, Safari iOS). VR est un plus (compatibilité WebXR) mais non requis Day 1. Le design WebGL (Babylon) s’adapte automatiquement à la résolution écran (ex. mobile downgradée).  
+
+- **Évolutivité hardware** : cibler des GPUs basiques (Intel UHD, Adreno mobiles). Utiliser feature-level fallback (ex. pas d’ombre dynamique si GPU faible, textures plus petites).  
+
+En résumé, développer d’abord une version Desktop/Browser, puis tester les optimisations sur mobile.  
+
+# 8. Checklist Blender→GLB et Babylon.js  
+
+**Dans Blender (création du lab)** :  
+
+- Appliquer toutes les transformations (`Ctrl+A`) pour geler Scale/Rota sur chaque objet.  
+- Échelle : 1 BU = 1 mètre (si Blender réglé par défaut). Créer la salle 12×10×3.2 m, mobilier aux bonnes dimensions (table 1.6×0.75×0.75 m, etc.).  
+- Hiérarchie claire : grouper par zone (mur, plafond, table, étagère, équipements). Nommer les objets utilement (Oscilloscope, Generator, Computer).  
+- Optimiser géométrie : utiliser le modificateur Decimate/Remesh pour réduire les tris sur les objets complexes. Trianguler si besoin (export GLTF le fait en général).  
+- Materials PBR : utiliser Shader Principled, textures PNG compressées. Couleurs 80–90% (pas de noir/blanc pur sur grands plans, éviter néons).  
+- Lightmap Baking *optionnel* : si la scène a un éclairage fixe, on peut baker l’illumination sur les textures pour alléger le rendu en Babylon.  
+
+**Exporter en GLTF/GLB** :  
+
+- Activer « Selected Objects » si on veut exporter seulement la salle. Paramètres : Format **GLB** (tout embarqué).  
+- Orientation : s’assurer que l’axe Z de Blender corresponde à l’avant de Babylon (Babylon GlTF utilise Y-up, Z-forward). En pratique, l’export glTF prend en compte les axes Blender par défaut (Y-up), donc pas de rotation manuelle.  
+- Textures : intègre en embed, vérifier que les chemins sont corrects. Resolution conseillée : max 2048×2048 (1–2 Ko).  
+- Joints/Skins : pour l’avatar export, cocher « Apply Modifiers », embed skin, inclure au moins une animation (T-pose).  
+- Vérifier export GLB (Babylon importera nativement).  
+
+**Dans Babylon.js (import/scene)** :  
+
+- Charger la scène : 
+  ```js
+  BABYLON.SceneLoader.Append("scenes/", "SignalLabRoom.glb", scene, onSuccess);
+  ```  
+- Caméra : placer un `FreeCamera` ou `UniversalCamera` à hauteur 1.6 m dans la scène. Exemple : `camera.position = new BABYLON.Vector3(0, 1.6, -5)`.  
+- Collisions : activer sur caméra et objets (scene.collisionsEnabled=true). Désactiver collisions sur sol pour marcher librement.  
+- Lumières : ajouter une `HemisphericLight` douce + quelques SpotLight/PointLights à partir du plafond. On peut *réutiliser* les bakes (skip si baked).  
+- Colliders physiques : pour chaque instrument interactif, attacher un mesh invisible (box/ellipsoïde). Exemple : `collisionBox = BABYLON.MeshBuilder.CreateBox("col", {size:1}, scene); collisionBox.position=oscilloscope.position; collisionBox.isPickable=false;`.  
+- Points d’interaction : définir des points clés (ex. `interactPoint`) comme children du mesh, à ~0.8 m du sol, devant l’objet pour ancrer les animations de main.  
+- Avatars : si implémentés, importer leur GLB et ajouter au `scene.meshes`. Connecter à la caméra (caméra attachée au “Head” du rig).  
+
+**Erreurs courantes** :  
+- Verifier que les normales sont orientées vers l’extérieur (flip normals si intérieur de surface).  
+- Vérifier l’absence de trous (no manifold gaps). Babylon loguera les erreurs de parsing.  
+- S’assurer de clôturer les fichiers .glb (pas d’objets nommés « ? »).  
+
+Ces étapes garantissent une transition propre Blender→Babylon.  
+
+# 9. Recommandations pour le MVP SignalLab  
+
+- **Choix du moteur** : Pour un accès immédiat (navigateur), **Babylon.js** (ou React Three Fiber/Three.js) est idéal. Il offre le moteur 3D + WebXR en un. Unity reste une option si on vise rapidement de la VR standalone ou mobile via WebGL IL2CPP, mais le temps de build + taille du WebGL peut être plus lourd. Nous partirons sur **Next.js + Babylon.js** pour piloter l’interface Web et la scène 3D.  
+
+- **Budget de la scène** : Commencer simple. La salle SignalLab (Fourier) doit être à ~100k triangles totale. Chaque instrument ~5–10k. Textures ≤1024×1024 (256–512× pour petits panneaux). Rester léger pour garantir compatibilité mobile.  
+
+- **Avatar** : Morphotype ~1,75 m, rig humanoïde type Mixamo/VRM. Exporter en glTF avec rig complet (au moins 20 os). Les mains et la tête doivent bouger librement (cible IK  pour pointer l’oscillo).  
+
+- **Distances d’interaction** : 0.8–1.0 m pour les instruments de bureau. Caméra à 1.60 m, FOV 90°.  
+
+- **Serveur** : Pour 500 connexions simultanées sur SignalLab, un VPS d’environ **32 Go RAM, 8 vCPU** (par ex. 4–8 threads de FastAPI) devrait suffire. CDN pour assets (ex. Cloudflare). Pour 10k inscrits (peuvent ne pas être tous connectés), scaler horizontalement : 2–3 instances FastAPI derrière un load-balancer (NGINX), + Redis.  
+
+- **Réseau** : Utiliser le protocole HTTPS, JWT pour auth. Éviter les appels bloquants (tous les calculs scientifiques sont asynchrones via FastAPI). Pas de peer-to-peer prévu (plus tard, on verra WebRTC pour chat audio).  
+
+- **Roadmap** :  
+  - **v0.1 (Q4 2026)** : Lancer le prototype « Fourier Lab » (Générateur + Oscillo + Visualisation), avec interface simple (description TP, suivi de progression). Beta fermée à quelques profs BTS.  
+  - **v0.2 (mi-2027)** : Ajouter Labo Laplace et Convolution, lancer les premiers TP filtrage. Développer un mini espace “TelecomLab preview” (BTS + petite antenne, pas encore fonctionnel) pour teaser. Intégrer table de bord étudiant (XP, progression) et preuve de concept auto-quiz.  
+  - **v0.3 (fin 2027)** : Tableau de bord enseignant (vision globale, classes), système de quiz complet lié aux labs, analytics basiques (temps passé par exercice).  
+  - **v0.4 (2028)** : IA Tutor (préliminaire) intégrée pour guider l’étudiant (« hints »), enrichir la bibliothèque de labs (ex. échantillonnage). Optimiser le mobile.  
+  - **v1.0 (2029)** : Développement du **TelecomLab** complet (PABX, VoIP, antennes), lancement du campus virtuel (plusieurs salles + multi-utilisateurs connectés).  
+
+```mermaid
+graph LR
+   subgraph "SignalLab Architecture"
+     Étudiant(Étudiant)
+     Professeur(Professeur)
+     Frontend(Babylon.js/Next.js)
+     LabScene(LabScene.glb)
+     Avatar(Avatar.glb)
+     Instruments(Instruments 3D)
+     Backend(FastAPI/Shaapi)
+     SciEngine(NumPy/SciPy)
+     DB[(PostgreSQL)]
+     CDN[(CDN GLB/Tex)]
+   end
+
+   Étudiant -->|Web| Frontend
+   Professeur --> Frontend
+   Frontend --> LabScene
+   LabScene --> Instruments
+   Frontend --> Avatar
+   Instruments --> SciEngine
+   SciEngine --> Backend
+   Backend --> DB
+   Frontend --assets--> CDN
+   ```
+```mermaid
+timeline
+    title Roadmap SignalLab
+    2026-Q4 : Prototype SignalLab (Fourier Lab)
+    2027-Q2 : Lab Laplace + Convolution; preview TelecomLab
+    2027-Q4 : Prof dashboard, quiz complet, analytics
+    2028-Q2 : IA tutor, mobile, plus d’experiences
+    2028-Q4 : Début TelecomLab (PABX module)
+    2029-Q4 : Version 1.0 complète (campus multiutilisateur)
+```
+
+**Illustration technique** : Par exemple, la plateforme open-source **Mozilla Hubs** (Hubs Foundation) permet de créer des espaces 3D accessibles par navigateur en un clic. Ces « rooms » contiennent des avatars personnalisés et du glTF chargé dynamiquement. Voici des captures d’écran d’exemples de salles Hubs : 
+
+ *Vue d’un événement virtuel dans Mozilla Hubs (supporte desktop et VR).*  
+
+ *Exemples d’environnements créés avec Hubs/Spoke (universités, labo virtuel, etc.).*  
+
+Ces espaces illustrent le genre d’**ergonomie** à viser : échelles réalistes, objets interactifs identifiables et portée d’interaction naturelle.  
+
+En conclusion, l’état de l’art montre que **SignalLab** doit mêler technologies web standard et bonnes pratiques de jeu 3D. L’usage de Babylon.js (ou Unity WebGL) nous place dans les clous actuels (comme Labster). La proposition MVP, ciblant d’abord un labo immersif simple (Fourier), s’inscrit dans une roadmap cohérente, évolutive et soutenue par des exemples concrets (Labster, PraxiLabs, Hubs) montrant l’efficacité des laboratoires virtuels sur l’apprentissage. 
+
+**Sources :** Sites officiels Labster, PraxiLabs, documentation Hubs Foundation; études et articles Unity sur Labster. Des références académiques sur l’efficacité des labs VR existent (non citées ici) mais confirment généralement l’intérêt pédagogique. Les données chiffrées proviennent principalement des pages éditeurs.

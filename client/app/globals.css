@@ -1,0 +1,94 @@
+@import 'tailwindcss';
+
+/*
+ * Direction artistique (fiche technique, section 10) : fond blanc dominant,
+ * accent jaune clair, texte gris tres fonce. Peu de degrades, pas de neon,
+ * pas de glassmorphism. Le monde 3D porte l'immersion, l'interface reste sobre.
+ */
+
+@theme {
+  --color-ink-50: #f7f7f8;
+  --color-ink-100: #ededef;
+  --color-ink-200: #d9d9de;
+  --color-ink-300: #b9b9c1;
+  --color-ink-400: #8d8d98;
+  --color-ink-500: #6b6b77;
+  --color-ink-600: #55555f;
+  --color-ink-700: #44444c;
+  --color-ink-800: #2a2a30;
+  --color-ink-900: #18181b;
+
+  /* Kortex house colours, as on security.kortex.sbs: white first, black
+     second. "accent" is black for actions, zinc tints for surfaces. */
+  --color-accent-50: #fafafa;
+  --color-accent-100: #f4f4f5;
+  --color-accent-200: #e4e4e7;
+  --color-accent-300: #d4d4d8;
+  --color-accent-400: #0a0a0a;
+  --color-accent-500: #27272a;
+  --color-accent-600: #52525b;
+
+  --color-success: #17916b;
+  --color-danger: #c0392b;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-ink-200);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Visible focus everywhere: a lab is navigated as much by keyboard as by
+     mouse, and the accent yellow needs a dark companion to stay legible. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink-900);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .surface {
+    background-color: var(--color-ink-50);
+  }
+
+  /* Oscilloscope grid, drawn in CSS so the canvas only carries the trace. */
+  .scope-grid {
+    background-image:
+      linear-gradient(to right, rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+    background-size: 10% 20%;
+  }
+}
+
+/* Katex renders the formulas revealed after a validated TP. */
+.katex-display {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Pill buttons of the STOUDENT landing (ported from the shaapi landing). */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-ink-800;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink-200 bg-white px-5 py-2.5 text-sm font-medium text-ink-900 transition hover:border-ink-900;
+  }
+}

@@ -1,0 +1,12 @@
+# Local credentials and tooling — never commit
+auth.txt
+.venv/
+**/.env
+!**/.env.template
+
+# Build output
+**/node_modules/
+**/.next/
+**/.next-*/
+**/__pycache__/
+*.py[cod]
