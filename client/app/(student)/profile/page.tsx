@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 import { toast } from 'sonner';
 
+import { AccountSettings } from '@/components/student/account-settings';
 import { AvatarStudio } from '@/components/student/avatar-studio';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -184,6 +185,8 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      <AccountSettings phone={profile.data?.phone ?? null} />
 
       <AvatarStudio />
     </div>

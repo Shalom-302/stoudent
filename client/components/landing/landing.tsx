@@ -563,6 +563,7 @@ export function Landing() {
           </div>
           <nav className="flex gap-5" aria-label="Pied de page">
             <Link href="/regles" className="hover:text-ink-900">Règles de la communauté</Link>
+            <Link href="/confidentialite" className="hover:text-ink-900">Confidentialité</Link>
             <Link href="/login" className="hover:text-ink-900">Connexion</Link>
           </nav>
           <p>© {new Date().getFullYear()} STOUDENT</p>

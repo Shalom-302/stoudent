@@ -18,6 +18,7 @@ import {
   useRequireAuth,
   VoteControl,
 } from '@/components/community/parts';
+import { FormattingHint } from '@/components/community/question-form';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -201,6 +202,7 @@ export default function QuestionPage() {
             placeholder={user ? 'Votre explication…' : 'Connectez-vous pour répondre.'}
             aria-label="Votre réponse"
           />
+          <FormattingHint />
           <div className="flex justify-end">
             <Button type="submit" disabled={post.isPending}>
               {post.isPending ? 'Publication…' : 'Publier ma réponse'}

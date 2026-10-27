@@ -61,6 +61,25 @@ export const authService = {
       { retryOnExpiry: false },
     ),
 
+  /** Signs out the other devices; this one gets a fresh token. */
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    const data = await api.post<{ access_token: string }>('/auth/password', {
+      old_password: oldPassword,
+      new_password: newPassword,
+    });
+    setToken(data.access_token);
+  },
+
+  startPhoneChange: (password: string, phone: string) =>
+    api.post<{ sent: boolean }>('/auth/phone/start', { password, phone }),
+  confirmPhoneChange: (phone: string, code: string) =>
+    api.post<{ phone: string }>('/auth/phone/confirm', { phone, code }),
+
+  async deleteAccount(password: string): Promise<void> {
+    await api.post('/auth/delete-account', { password });
+    forgetSession();
+  },
+
   resendOtp: (phone: string) =>
     api.post<{ sent: boolean }>('/auth/resend-otp', { phone }, { retryOnExpiry: false }),
 

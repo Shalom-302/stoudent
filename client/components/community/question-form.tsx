@@ -28,6 +28,16 @@ function useDebounced<T>(value: T, delay = 400): T {
  * Ask a question, or edit one (``initial`` given). The photo is uploaded as
  * soon as it is picked, so publishing only sends the URL the API returned.
  */
+/** How to write code and formulas; shared by the question and answer forms. */
+export function FormattingHint() {
+  return (
+    <p className="text-xs text-ink-400">
+      Formule : entourez-la de $, par ex. <code className="rounded bg-ink-50 px-1">{'$f_e > 2 f_{max}$'}</code> · code :
+      entourez-le de <code className="rounded bg-ink-50 px-1">```</code>
+    </p>
+  );
+}
+
 export function QuestionForm({
   initial,
   submitLabel,
@@ -155,6 +165,7 @@ export function QuestionForm({
           maxLength={20000}
           placeholder={'Énoncé, ce que vous avez essayé, où vous bloquez.\nEntourez le code avec ``` pour le garder lisible.'}
         />
+        <FormattingHint />
       </div>
 
       <div className="space-y-1.5">

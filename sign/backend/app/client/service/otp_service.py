@@ -24,6 +24,7 @@ _WA_SUFFIX = '@s.whatsapp.net'
 _MESSAGES = {
     'signup': 'STOUDENT : votre code de vérification est {code}.',
     'reset': 'STOUDENT : votre code pour choisir un nouveau mot de passe est {code}.',
+    'phone': 'STOUDENT : votre code pour confirmer ce nouveau numéro est {code}.',
 }
 
 

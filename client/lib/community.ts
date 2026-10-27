@@ -26,6 +26,9 @@ export function filiereLabel(code: string): string {
   return known ? `${known.code} · ${known.name}` : code;
 }
 
+/** Where members send data requests (privacy page). */
+export const PRIVACY_CONTACT = 'contact@kortex.sbs';
+
 export const LEVELS = ['BTS 1', 'BTS 2', 'Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2', 'Ingénieur'];
 
 export const REPORT_REASONS = [

@@ -72,8 +72,9 @@ async def _profiles_by_user(db, user_ids: set[int]) -> dict[int, StudentProfile]
 
 def _author(user: User, profile: StudentProfile | None) -> dict:
     return {
-        # Accounts created before STOUDENT have no pseudo: never leak their email.
-        'pseudo': user.pseudo or f'membre-{user.x_id[-6:]}',
+        # No pseudo: a deleted account, or one created before STOUDENT. Never
+        # fall back to the email or number.
+        'pseudo': user.pseudo or ('Membre supprimé' if not user.status else f'membre-{user.x_id[-6:]}'),
         'filiere': profile.filiere if profile else None,
         'level': profile.level if profile else None,
         'reputation': profile.reputation if profile else 0,

@@ -333,6 +333,10 @@ export function AuthForm({ mode }: AuthFormProps) {
               J’accepte les{' '}
               <Link href="/regles" target="_blank" className="font-semibold text-ink-900 underline underline-offset-4">
                 règles de la communauté
+              </Link>{' '}
+              et la{' '}
+              <Link href="/confidentialite" target="_blank" className="font-semibold text-ink-900 underline underline-offset-4">
+                politique de confidentialité
               </Link>
               .
             </span>

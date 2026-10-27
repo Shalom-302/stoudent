@@ -1,5 +1,8 @@
 'use client';
 
+import 'katex/dist/katex.min.css';
+
+import katex from 'katex';
 import { ChevronDown, Flag, GraduationCap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -282,9 +285,49 @@ export function ReportButton({
   );
 }
 
+// $$ display $$ first, then $inline$ (no space just inside the dollars, one
+// line), so "590 000 F" or a lone "$" in prose stays plain text.
+const MATH_RE = /\$\$([\s\S]+?)\$\$|\$(?!\s)([^$\n]+?)(?<!\s)\$/g;
+const MAX_FORMULA = 500;
+
+/** KaTeX with trust off: it escapes everything it does not typeset itself. */
+function Formula({ tex, display }: { tex: string; display: boolean }) {
+  const html = React.useMemo(
+    () =>
+      katex.renderToString(tex, {
+        displayMode: display,
+        throwOnError: false,
+        trust: false,
+        strict: 'ignore',
+        maxSize: 10,
+        maxExpand: 100,
+      }),
+    [tex, display],
+  );
+  return display ? (
+    <span className="my-2 block overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />
+  ) : (
+    <span dangerouslySetInnerHTML={{ __html: html }} />
+  );
+}
+
+function WithMath({ text }: { text: string }) {
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(MATH_RE)) {
+    const tex = match[1] ?? match[2];
+    if (tex.length > MAX_FORMULA) continue;
+    if (match.index > last) nodes.push(text.slice(last, match.index));
+    nodes.push(<Formula key={match.index} tex={tex.trim()} display={match[1] !== undefined} />);
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return <>{nodes}</>;
+}
+
 /**
- * Plain-text body with paragraphs and ```code``` blocks. No HTML is ever
- * interpreted: user content is rendered as text nodes only.
+ * Post body: paragraphs, ```code``` blocks and $formulas$. User text is only
+ * ever rendered as text nodes; the sole HTML injected is KaTeX's own output.
  */
 export function PostBody({ text }: { text: string }) {
   const parts = text.split(/```/);
@@ -297,7 +340,7 @@ export function PostBody({ text }: { text: string }) {
           </pre>
         ) : part.trim() ? (
           <p key={i} className="whitespace-pre-wrap break-words">
-            {part.trim()}
+            <WithMath text={part.trim()} />
           </p>
         ) : null,
       )}

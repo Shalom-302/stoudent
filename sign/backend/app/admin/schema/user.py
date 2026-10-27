@@ -232,3 +232,28 @@ class UpdatePasswordParam(SchemaBase):
     confirm_password: str
 
     _check_password = field_validator('new_password')(validate_password_strength)
+
+
+class ChangePasswordParam(SchemaBase):
+    old_password: str = Field(min_length=1, max_length=settings.PASSWORD_MAX_LENGTH)
+    new_password: str = Field(min_length=1, max_length=settings.PASSWORD_MAX_LENGTH)
+
+    _check_password = field_validator('new_password')(validate_password_strength)
+
+
+class ChangePhoneStartParam(SchemaBase):
+    password: str = Field(min_length=1, max_length=settings.PASSWORD_MAX_LENGTH)
+    phone: str
+
+    _norm = field_validator('phone')(normalize_phone)
+
+
+class ChangePhoneConfirmParam(SchemaBase):
+    phone: str
+    code: str = Field(min_length=4, max_length=8)
+
+    _norm = field_validator('phone')(normalize_phone)
+
+
+class DeleteAccountParam(SchemaBase):
+    password: str = Field(min_length=1, max_length=settings.PASSWORD_MAX_LENGTH)

@@ -9,6 +9,10 @@ from fastapi_limiter.depends import RateLimiter
 from starlette.background import BackgroundTasks
 
 from backend.app.admin.schema.user import (
+    ChangePasswordParam,
+    ChangePhoneConfirmParam,
+    ChangePhoneStartParam,
+    DeleteAccountParam,
     ForgotPasswordParam,
     GetCurrentUserInfoDetail,
     ResendOtpParam,
@@ -18,6 +22,7 @@ from backend.app.admin.schema.user import (
     VerifyOtpParam,
 )
 from backend.app.admin.service.auth_service import auth_service
+from backend.app.client.service.account_service import account_service
 from backend.common.response.response_schema import ResponseModel, response_base
 from backend.common.security.jwt import DependsJwtAuth
 
@@ -109,6 +114,48 @@ async def refresh(request: Request, response: Response) -> ResponseModel:
 @router.post('/logout', summary='Log out', dependencies=[DependsJwtAuth])
 async def logout(request: Request, response: Response) -> ResponseModel:
     await auth_service.logout(request=request, response=response)
+    return response_base.success(request=request)
+
+
+@router.post(
+    '/password',
+    summary='Change my password (signs out my other devices)',
+    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=5, minutes=10))],
+)
+async def change_password(request: Request, response: Response, obj: ChangePasswordParam) -> ResponseModel:
+    data = await account_service.change_password(
+        user_id=request.user.id, old_password=obj.old_password, new_password=obj.new_password, response=response
+    )
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
+    '/phone/start',
+    summary='Send a code to my new WhatsApp number',
+    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=3, minutes=10))],
+)
+async def start_phone_change(request: Request, obj: ChangePhoneStartParam) -> ResponseModel:
+    data = await account_service.start_phone_change(user_id=request.user.id, password=obj.password, phone=obj.phone)
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
+    '/phone/confirm',
+    summary='Confirm my new WhatsApp number with the code',
+    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=10, minutes=10))],
+)
+async def confirm_phone_change(request: Request, obj: ChangePhoneConfirmParam) -> ResponseModel:
+    data = await account_service.confirm_phone_change(user_id=request.user.id, phone=obj.phone, code=obj.code)
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
+    '/delete-account',
+    summary='Delete my account (personal data erased, posts anonymised)',
+    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=5, minutes=10))],
+)
+async def delete_account(request: Request, response: Response, obj: DeleteAccountParam) -> ResponseModel:
+    await account_service.delete_account(user_id=request.user.id, password=obj.password, response=response)
     return response_base.success(request=request)
 
 
