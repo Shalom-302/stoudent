@@ -1,310 +1,252 @@
 # STOUDENT — état du projet
 
-> Le mini réseau social d'entraide étudiante (voir `STOUDENT_note_de_concept_MVP.docx`).
-> SignalLab, le labo virtuel 3D décrit plus bas, en est l'onglet **Lab**.
+> Le mini réseau social d'entraide des étudiants **de toutes les filières du BTS**.
+> Concept : `STOUDENT_note_de_concept_MVP.docx`. Backed by Kortex.
 
-## 0. Le virage STOUDENT (27 octobre 2026)
-
-Tout SignalLab est conservé. Ce qui a été ajouté par-dessus :
-
-| | |
-|---|---|
-| **Comptes** | Identifiant = numéro WhatsApp (+ pseudo public, filière obligatoire, établissement, niveau, « étudiant » ou « professeur »). E-mail facultatif ; les anciens comptes se connectent toujours par e-mail. |
-| **OTP WhatsApp** | Porté de shaapi (gowa). `OTP_ENABLED=false` par défaut ; à `true`, le compte reste bloqué jusqu'au code. |
-| **Communauté** | Fil de questions (filtres filière / matière / tag, recherche plein texte française), réponses, votes, meilleure réponse, réputation, ressources (fermées au lancement, `COMMUNITY_RESOURCES_ENABLED`), signalements (masquage auto à 3). Lecture publique, écriture connectée. |
-| **Professeurs** | Se déclarer prof ne donne aucun droit. Un admin attribue le rôle `teacher` dans SignManager, qui débloque « Validée par un professeur ». |
-| **SignManager** | Recherche par pseudo / numéro, onglet **Modération** (masquer, rejeter, rétablir). |
-| **Front** | Landing GSAP en noir et blanc, couleurs Kortex comme security.kortex.sbs (portée de shaapi), « Backed by Kortex », pages `/questions`, `/questions/ask`, `/questions/[id]`, `/resources`, `/regles`. Le labo vit sous l'onglet Lab avec sa sous-navigation. |
-| **Déploiement** | `.github/workflows/build.yml` pousse `ghcr.io/<owner>/<repo>` (API) et `<repo>-web` (client) sur GHCR ; `compose.image.yml` est prêt pour Dokploy. Le client relaie `/api/v1` et `/admin/api/v1` vers `API_INTERNAL_URL` : une seule image pour tous les domaines. |
-
-Fichiers clés : `sign/backend/models/community.py`,
-`sign/backend/app/client/service/community_service.py`,
-`sign/backend/app/client/service/otp_service.py`,
-`sign/backend/app/admin/api/v1/moderation.py`, `client/app/(community)/`,
-`client/components/landing/landing.tsx`, `client/lib/server/proxy.ts`.
-
-### Mise en ligne sur Dokploy
-
-1. Pousser le dépôt sur GitHub (branche `main`) : la CI publie les deux images.
-2. Dans Dokploy, créer un projet *Compose* sur `compose.image.yml`, et définir
-   `PUBLIC_DOMAIN`, `TOKEN_SECRET_KEY`, `OPERA_LOG_ENCRYPT_SECRET_KEY`,
-   `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY` (et `STOUDENT_IMAGE` si le dépôt
-   ne s'appelle pas `shalom-302/stoudent`).
-3. Router le domaine vers le service `web`, port 3000.
-4. Pour l'OTP : `OTP_ENABLED=true` et les `GOWA_*`, comme pour shaapi (réseau
-   `whatsapp-shared-network`).
-
----
-
-Point d'avancement SignalLab au **18 septembre 2026**. Ce document décrit ce qui tourne
-aujourd'hui, ce qui reste à faire, et les décisions prises en cours de route —
-y compris celles qui s'écartent de la fiche technique.
+Point d'avancement au **28 octobre 2026**. En production sur
+**https://stoudent.kortex.sbs** (Dokploy, images GHCR). Ce document décrit ce
+qui tourne, comment c'est déployé, ce qui reste à faire et les décisions prises.
 
 ---
 
 ## 1. En une phrase
 
-Un étudiant peut créer un compte, entrer dans une salle de TP en 3D, piloter son
-avatar jusqu'à un poste, y ouvrir un TP sans quitter la salle, régler des
-instruments dont les écrans affichent la vraie courbe calculée par le moteur
-scientifique, se faire noter **sur ce qu'il a manipulé**, gagner de l'XP et des
-badges, et retrouver sa progression à la reconnexion.
+Un étudiant s'inscrit avec son numéro WhatsApp et sa filière, pose une question
+(avec la photo de l'exercice et des formules), reçoit des réponses votées
+(👍 Utile), choisit la meilleure, remercie (🙏 Merci), est prévenu une fois sur
+WhatsApp quand on lui répond, et reste connecté sur son téléphone. Le labo
+virtuel 3D (ex-SignalLab) est inclus sous l'onglet **Lab**.
 
-Le critère de validation du MVP v0.1 de la fiche technique est atteint.
+Le périmètre MVP de la note de concept est couvert, ressources mises à part
+(fermées au lancement, voir §6).
 
 ---
 
-## 2. Architecture
+## 2. Ce qui fonctionne
 
-```
-signlab/
-├── sign/          backend   FastAPI + Shaapi · PostgreSQL · Redis · MinIO
-│   └── backend/
-│       ├── app/client/      API étudiante   (28 routes, montée à la racine)
-│       ├── app/admin/       back-office     (26 routes, dont SignManager)
-│       ├── services/        moteur scientifique NumPy / SciPy / SymPy
-│       ├── models/          7 modèles SignalLab + le socle auth
-│       └── seeder/          catalogue pédagogique (idempotent)
-└── client/        frontend  Next.js 15 · TypeScript · Tailwind · React Three Fiber
-    ├── app/                 13 pages (App Router)
-    ├── components/world3d/  la salle 3D
-    ├── components/experiments/  instruments 2D
-    └── lib/lab3d/           cotes, signal, écrans, ancrages
-```
+### Comptes
 
 | | |
 |---|---|
-| Backend | 139 fichiers Python, 3 migrations Alembic |
-| Frontend | 92 fichiers TS/TSX, 13 pages |
-| API étudiante | 28 routes · API admin 26 routes (dont 5 SignManager) |
-| Données seedées | 2 labos, 7 expériences (5 publiées), 8 badges |
+| **Inscription** | Numéro WhatsApp (identifiant), pseudo public, **filière obligatoire**, établissement et niveau facultatifs, « étudiant » ou « professeur ». E-mail facultatif (les admins se connectent par e-mail). |
+| **Vérification** | Code WhatsApp à l'inscription via gowa, porté de shaapi (`OTP_ENABLED`). Quota d'envois par numéro. |
+| **Session** | Seul un jeton est gardé dans le navigateur, jamais le mot de passe. Cookie httpOnly de 60 jours, renouvelé à chaque visite : ouvrir un lien STOUDENT reconnecte. Une session par appareil. |
+| **Mot de passe oublié** | Code WhatsApp dédié, même réponse que le numéro existe ou non. Toutes les sessions sont fermées après le changement. |
+| **Profil > compte** | Changer son mot de passe (les autres appareils sont déconnectés), ajouter ou changer son numéro (code envoyé au nouveau), **supprimer son compte**. |
+| **Consentement WhatsApp** | Case décochée par défaut, horodatée, révocable dans le profil. |
 
-### Le contrat 3D ↔ simulation
+### Communauté
 
-Babylon.js a été remplacé par **React Three Fiber** (voir §6). Quel que soit le
-moteur, la règle de la fiche technique tient : le 3D **ne calcule rien**. Il
-affiche ce que FastAPI a renvoyé. Toute la physique du signal est en Python.
+- **Fil de questions** : filtres filière, matière et tag, recherche plein texte
+  en français, tris (récentes, mieux notées, actives, sans réponse). Lecture
+  publique, écriture connectée.
+- **Poser une question** : titre, détail, filière, matière, tags, **photo de
+  l'exercice** (prise depuis le téléphone, réencodée en JPEG, position GPS
+  retirée). Questions similaires proposées pendant la saisie du titre.
+- **Formules** : `$…$` dans le texte, `$$…$$` centrée (KaTeX). Code entre ```.
+- **Réponses** : 👍 Utile (vote négatif discret), 🙏 Merci, meilleure réponse
+  choisie par l'auteur, « Validée par un professeur ».
+- **Modifier / supprimer** : sa question (tant qu'elle n'a pas de réponse pour
+  la suppression), sa réponse (la réputation gagnée est retirée). Mention
+  « modifiée ».
+- **Partager sur WhatsApp** sur chaque question.
+- **Réputation** : +5 par 👍 sur une question, +10 sur une réponse, +15 pour la
+  meilleure réponse, +2 par Merci ; un vote négatif retire 1 ou 2. Toutes les
+  variations sont réversibles.
+- **Signalements** : un contenu signalé par 3 membres est masqué en attendant
+  la modération.
+
+### Notifications
+
+- **Sur le site** : cloche 🔔 avec compteur (nouvelle réponse, meilleure
+  réponse, validation prof, merci). Ouvrir la cloche marque tout comme lu.
+- **Sur WhatsApp** : un seul message court, *« STOUDENT : quelqu'un a répondu à
+  ta question « … » »* + le lien. **Une fois par question**, à la première
+  réponse, pour les membres qui ont donné leur accord. Plafond de 3 messages par
+  heure et par personne, pour protéger le numéro gowa.
+
+### Professeurs et modération (SignManager)
+
+- Se déclarer professeur ne donne aucun droit. Un admin attribue le rôle
+  **professeur vérifié** dans SignManager ; il débloque « Valider (prof) ».
+- SignManager : membres (recherche par pseudo, numéro, e-mail ; filière ;
+  « infos WhatsApp ✓ »), activation des comptes, rôles, **onglet Modération**
+  (masquer, rejeter, rétablir), suivi du labo.
+
+### Landing et identité
+
+Noir et blanc, couleurs Kortex (comme security.kortex.sbs), animations GSAP
+portées de shaapi, « Backed by Kortex ». La démo animée fait tourner une
+question IDA, FC et RIT ; une section « Exemples » montre des questions types
+par filière et matière (RIT, IDA, FC). Pages `/regles` et `/confidentialite`.
+
+**Filières** (`client/lib/community.ts`) : RIT, IDA, ELT, SEI, MSP, FC, GC,
+RHC, LOG, AD. Un membre peut en saisir une autre.
+
+---
+
+## 3. Architecture
 
 ```
-Étudiant → manipulation 3D → paramètres → FastAPI → NumPy/SciPy/SymPy
-                                                         ↓
-              écran de l'instrument  ←  Three.js  ←  résultats
+signlab/                       dépôt github.com/Shalom-302/stoudent
+├── sign/                      API  FastAPI (socle shaapi) · PostgreSQL · Redis · MinIO
+│   └── backend/
+│       ├── app/client/        API publique (/api/v1) : auth, community, labs…
+│       ├── app/admin/         back-office (/admin/api/v1) : SignManager, moderation
+│       ├── models/            community.py (questions, réponses, votes, notifications…)
+│       ├── seeder/            signallab.py (labos), demo.py (comptes de démo)
+│       └── services/          moteur scientifique du labo
+├── client/                    web  Next.js 15 · Tailwind 4 · GSAP · KaTeX · React Three Fiber
+│   ├── app/(community)/       questions, confidentialité, règles
+│   ├── app/api, app/admin/api relais vers l'API (lib/server/proxy.ts)
+│   └── components/            community/, landing/, student/, world3d/…
+├── compose.image.yml          production Dokploy
+└── .github/workflows/build.yml  images GHCR à chaque push sur main
 ```
 
----
+**Le navigateur ne parle qu'au site.** Le serveur Next relaie `/api/v1` et
+`/admin/api/v1` vers `API_INTERNAL_URL`, lu au démarrage et non figé à la build :
+une même image sert n'importe quel domaine, et le cookie de session reste sur le
+domaine du site. L'API n'a pas de domaine public.
 
-## 3. Ce qui fonctionne
-
-### Moteur scientifique — vérifié
-
-Six services purs (`backend/services/`), sans base ni framework.
-**41 contrôles de physique passent**, dont les valeurs exactes sur lesquelles
-les TP notent :
-
-| Contrôle | Attendu | Obtenu |
-|---|---|---|
-| Fondamentale d'un carré | `4A/π` = 1,273 | ✓ |
-| Butterworth à la coupure | −3 dB | ✓ |
-| Butterworth ordre 4 | −80 dB/décade | ✓ |
-| Repliement 5 kHz @ 6 kHz | 1 kHz | ✓ |
-| Résolution sur 20 ms | 50 Hz | ✓ |
-| Pôle d'un RC 1 kΩ/1 µF | −1000, stable | ✓ |
-
-Deux garde-fous testés : une expression Laplace malveillante est refusée (400),
-et une demande de 10⁸ échantillons est refusée (422).
-
-### Parcours pédagogique
-
-Les 5 TP du MVP sont seedés, en français correct et accentué :
-
-1. Signaux élémentaires · 2. Série de Fourier · 3. Transformée de Fourier ·
-4. Échantillonnage · 5. Filtrage
-
-*(Convolution et Laplace sont seedés mais `is_published = false` — V0.2 est un
-changement de drapeau.)*
-
-Chaque TP contient : un **rappel de cours** (la formule), un **exemple résolu**
-en 6 étapes avec les nombres réels du moteur, un protocole pas à pas, des
-**jalons de manipulation** et une ou deux questions de lecture d'instrument.
-
-### La salle 3D
-
-Construite aux cotes du document de spécification : **12 × 10 × 3,20 m**, tables
-1,60 × 0,75 × 0,75 m, œil à 1,60 m, FOV 90°, interaction à 0,80 m. Murs
-réellement percés, 4 postes étudiants, table centrale, baie 42U, grand écran,
-tableau blanc, câblage en spline.
-
-L'avatar (1,75 m, hiérarchie de rig standard) se pilote **comme dans un jeu** :
-3ᵉ personne par défaut, bascule 1ʳᵉ personne, cycle de marche, caméra qui se
-rapproche quand un mur passerait devant. Clavier ZQSD/WASD/flèches, **manche
-virtuel à l'écran**, glisser pour regarder. Collisions sur le mobilier.
-
-Le grand écran et le tableau blanc portent la consigne en cours, une mesure
-vivante et ce qu'il reste à faire.
-
-### Back-office SignManager
-
-`/signmanager`, réservé aux administrateurs : compteurs plateforme, **entonnoir
-par TP** (où une promotion bloque), table des étudiants avec recherche,
-activation/désactivation des comptes et attribution des rôles.
+**Photos** : stockées dans MinIO sous un nom aléatoire, servies par l'API
+(`/api/v1/community/uploads/<nom>.jpg`). MinIO n'est jamais exposé.
 
 ---
 
-## 4. Sécurité
+## 4. Déploiement
 
-Un audit a été mené en parallèle du développement. Corrigé :
+### Chaîne
 
-| Problème | Gravité | État |
-|---|---|---|
-| **Toute inscription publique recevait le rôle `admin`** | critique | corrigé, vérifié (nouveau compte → `user`, SignManager → 403) |
-| `python-jose` non maintenu | élevée | remplacé par **PyJWT** |
-| `passlib` non maintenu, cassé avec bcrypt 4.x | élevée | **bcrypt** direct, hashes existants compatibles |
-| Course à la création du profil étudiant (3 requêtes parallèles → 500) | moyenne | `INSERT … ON CONFLICT DO NOTHING` |
-| Réponses de TP exposées au navigateur | moyenne | correction 100 % serveur, vérifié |
-| Expression Laplace évaluable | moyenne | liste blanche de symboles, aucune évaluation |
-| Endpoints de calcul sans borne | moyenne | plafond `durée × fréquence`, limitation de débit |
-| En-têtes de sécurité absents | faible | CSP, HSTS, TrustedHost, gzip |
-| Secrets de dev acceptés en production | faible | refus de démarrage explicite |
+`git push` sur `main` → GitHub Actions construit `ghcr.io/shalom-302/stoudent`
+(API) et `ghcr.io/shalom-302/stoudent-web` (client) → **Deploy** dans Dokploy
+(projet Compose sur `compose.image.yml`).
 
-Trois comptes portent encore le rôle `admin` parce qu'ils ont été créés **avant**
-le correctif. À rétrograder depuis SignManager.
+### Variables Dokploy (onglet Environment)
 
----
+| Variable | Rôle |
+|---|---|
+| `PUBLIC_DOMAIN` | `stoudent.kortex.sbs` (sert aussi aux liens envoyés sur WhatsApp) |
+| `TOKEN_SECRET_KEY`, `OPERA_LOG_ENCRYPT_SECRET_KEY` | Secrets, à générer une fois |
+| `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY` | Mots de passe des services (MinIO : 8 caractères min.) |
+| `OTP_ENABLED`, `GOWA_URL`, `GOWA_BASIC_USER`, `GOWA_BASIC_PASS` | WhatsApp, mêmes valeurs que shasec |
 
-## 5. Comment le lancer
+Si une variable obligatoire manque, le compose refuse de démarrer et la nomme.
+En production, l'API refuse aussi de démarrer avec les valeurs de dev
+(`postgres`, `minioadmin`…).
+
+Domaine : **`stoudent.kortex.sbs` → service `web`, port 3000**, HTTPS.
+L'API rejoint le réseau `whatsapp-shared-network` pour joindre gowa
+(`http://shalom-gowa:3080`).
+
+### Commandes sur le VPS
 
 ```bash
-# Backend
-cd sign
-shaapi up              # ou docker compose up -d
-shaapi db apply
-docker exec sign_api python -m backend.cli seed-labs
-docker exec sign_api python -m backend.cli create-admin \
-    --email vous@exemple.fr --password 'MotDePasseSolide2026!'
-
-# Frontend
-cd client
-npm install
-cp .env.local.example .env.local
-npm run dev
+API=shalom-stoudent-ap4f77-api-1
+docker exec $API python -m backend.cli seed-labs      # TP du labo (idempotent)
+docker exec $API python -m backend.cli seed-demo      # 6 comptes de démo + 12 questions (idempotent)
+docker exec $API python -m backend.cli create-admin \
+    --email admin@stoudent.kortex.sbs --password '…' --pseudo stoudent.admin
 ```
 
-| | |
-|---|---|
-| Application | http://localhost:3000 |
-| Salle 3D | http://localhost:3000/world |
-| Swagger étudiant | http://localhost:8000/api/v1/docs |
-| Swagger admin | http://localhost:8000/admin/api/v1/docs |
+**Comptes de démo** : un par filière (`yao.rit`, `awa.ida`, `kone.elt`,
+`fatou.sei`, `bamba.msp`, `marie.fc`), deux questions chacun. Leurs numéros
+sont dans la plage `225 00…`, attribuée à aucun opérateur.
 
-> **Attention** : ne pas lancer `next build` pendant que `next dev` tourne — les
-> deux écrivent dans `.next` et se corrompent mutuellement. Utiliser
+### Lancer en local
+
+```bash
+cd sign && docker compose up -d          # API sur :8000, migrations au démarrage
+cd client && npm install && npm run dev  # site sur :3000, relaie vers :8000
+```
+
+> Ne pas lancer `next build` pendant que `next dev` tourne : utiliser
 > `NEXT_DIST_DIR=.next-check npx next build`.
+
+---
+
+## 5. Sécurité et données personnelles
+
+| Mesure | Détail |
+|---|---|
+| Numéros jamais publics | Visibles par leur propriétaire (profil) et les admins (SignManager) uniquement. Vérifié sur le fil public. |
+| Pas d'énumération de comptes | Numéro inconnu et mauvais mot de passe : même réponse. Idem pour « mot de passe oublié ». |
+| Force brute | Limite par IP **et** blocage du compte 15 min après 8 mots de passe faux. |
+| Mots de passe | bcrypt, politique 10 caractères et deux types de caractères. |
+| Jetons | PyJWT, `jti` unique, révocables (Redis), rotation du jeton de rafraîchissement. |
+| Changements sensibles | Mot de passe actuel exigé pour changer de mot de passe, de numéro ou supprimer le compte. |
+| Photos | Réencodées (un faux fichier image est refusé), EXIF et GPS retirés, 8 Mo max, aucune URL externe acceptée. |
+| Formules | KaTeX avec `trust` désactivé : seul le rendu KaTeX est injecté, le texte des membres reste du texte. |
+| Suppression de compte | Numéro, pseudo, e-mail, profil, consentement et journaux de connexion effacés ; les messages restent sous « Membre supprimé ». |
+| Infrastructure | En-têtes de sécurité, hôtes de confiance, Postgres et MinIO non exposés, refus de démarrer avec des secrets de dev. |
+
+La politique de confidentialité (`/confidentialite`) décrit tout cela. Contact
+données : `contact@kortex.sbs` (constante `PRIVACY_CONTACT`, à confirmer).
 
 ---
 
 ## 6. Décisions et écarts assumés
 
-Trois choix s'écartent des documents de référence. Ils sont volontaires.
-
-### React Three Fiber au lieu de Babylon.js
-
-La fiche technique retient Babylon.js. Une maquette R3F faite par l'équipe
-produisait une salle nettement meilleure que l'implémentation Babylon. Elle a
-été portée, et Babylon **retiré** : la fiche technique interdit explicitement
-d'utiliser deux moteurs pour le même monde 3D.
-
-Conséquence : React est épinglé en `~19.2.0`, car `@react-three/fiber@9` exige
-`react < 19.3`.
-
-### La formule est donnée avant la manipulation
-
-La fiche technique (§4) dit « la formule arrive après l'expérience ». C'est
-l'inverse qui a été retenu : sans formule ni exemple résolu, un étudiant ne
-pratique pas, il tâtonne. Chaque TP donne donc la formule et un exercice
-entièrement corrigé, puis demande de refaire le raisonnement au banc.
-
-Ce qui reste débloqué à la fin est la **synthèse** (le raisonnement complet et
-ses limites), pas la formule.
-
-### La note vient du geste, pas du questionnaire
-
-Un TP sert à pratiquer. La notation a été rééquilibrée : **60 à 75 % des points
-viennent de ce qui a été fait au banc**, le reste de questions de lecture
-d'instrument.
-
-Un jalon se verrouille : atteindre l'état une fois suffit, remettre le bouton en
-arrière ne l'enlève pas. Les conditions sont déclaratives (`{left, op, right}`),
-sans évaluation d'expression — une règle écrite dans les données ne peut jamais
-devenir un chemin d'exécution.
-
-```
-Score 100/100     manipulation 9/9     lecture 3/3
-  [x] Observer un repliement (fe sous le critère de Shannon)
-  [x] Corriger fe pour respecter fe > 2·fmax
-  [x] Refaire l'essai sur une autre fréquence de signal
-```
+- **Ressources fermées au lancement.** Le module (liens attribués par filière)
+  est codé et testé, mais caché : page redirigée, API en 404 tant que
+  `COMMUNITY_RESOURCES_ENABLED=false`. Le code est dans
+  `client/components/community/resources-view.tsx`.
+- **WhatsApp volontairement rare.** Un message par question, jamais pour les
+  votes, merci, validations : tout le reste passe par la cloche. Objectif : ne
+  pas être perçu comme du spam, et ne pas faire bannir le numéro gowa.
+- **Suppression = anonymisation.** Effacer une question détruirait les réponses
+  des autres ; les données personnelles, elles, disparaissent.
+- **Plus aucune mention de SignalLab** côté utilisateur : les labos s'appellent
+  « Labo Signal » et « Labo Télécom ». Le nom subsiste dans du code interne
+  (dossiers, identifiants), invisible.
+- **Noir et blanc Kortex** plutôt que le jaune initial (choix de marque).
 
 ---
 
 ## 7. Tests
 
-Deux harnais, tous deux reproductibles.
+Tous reproductibles, lancés avant chaque push :
 
-**Moteur scientifique** — 41 assertions sur les valeurs physiques exactes.
+| Suite | Contenu | Dernier passage |
+|---|---|---|
+| API communauté | inscription, questions, réponses, votes, réputation, signalements, ressources fermées | 34/34 |
+| API sessions | cookie seul, rotation, multi-appareils, mot de passe oublié, blocage | 18/18 |
+| API fonctions | photos, notifications, merci, modification, suppression | 21/21 |
+| API compte | mot de passe, numéro, suppression et anonymisation | 21/21 |
+| Navigateur (Playwright) | parcours complet, nouvelles fonctions, compte, session, absence de « SignalLab » | tout vert, 0 erreur console |
+| Base neuve | migrations + création des tables + `seed-demo` sur une base vide, comme en production | OK |
+| WhatsApp | faux serveur gowa : 1 message à la 1re réponse, 0 à la 2e, 0 sans accord | OK |
 
-**Navigateur** — Playwright + Chromium (`scratchpad/e2e/lab.mjs`) : inscription
-par l'API, jeton injecté dans `localStorage`, pilotage de la salle 3D, captures
-d'écran, erreurs console. Dernier passage : **0 erreur console**.
-
-Ce harnais a trouvé quatre bugs invisibles à la lecture du code :
-
-- le `lookAt` d'un `Object3D` oriente +Z vers la cible, une caméra regarde en −Z
-  → **180° exactement**, on voyait le mur ;
-- signe inversé sur le rig 3ᵉ personne → la caméra était **devant** l'avatar, qui
-  marchait vers elle ;
-- strafe inversé à tous les angles → **D allait à gauche** ;
-- la course sur la création du profil étudiant.
+Bugs trouvés par ces tests et corrigés : rafraîchissement de session qui
+n'avait jamais marché depuis le navigateur, jetons identiques dans la même
+seconde, réputation bloquée à 0, vues comptées plusieurs fois, migrations qui
+plantaient sur une base neuve, verrou SQL incompatible avec une jointure.
 
 ---
 
 ## 8. Ce qui reste
 
-### Vérifications en attente
+### Reporté volontairement
 
-- [ ] **Ouvrir un poste dans la salle 3D en test automatisé** — le script ne sait
-      pas encore marcher jusqu'au rayon d'un mètre. L'onglet « Cours » du panneau
-      en salle est vérifié par le build et par la version 2D, pas à l'œil.
-- [ ] Ressenti du pilotage (vitesse, distance caméra, sensibilité du glisser).
-      Constantes groupées en haut de `components/world3d/Player.tsx`.
+- [ ] **Sauvegardes automatiques de Postgres** (Dokploy, vers un stockage
+      externe) : à mettre en place quand le trafic le justifiera.
+- [ ] Déclaration ARTCI (base de numéros de téléphone).
+- [ ] Confirmer l'adresse de contact données (`PRIVACY_CONTACT`).
 
-### Court terme
+### Prochaines fonctions
 
-- [ ] Rétrograder les 3 comptes `admin` hérités
-- [ ] Brancher les écrans des instruments de la salle sur l'API plutôt que sur la
-      synthèse locale (aujourd'hui locale à 60 fps, ce que prévoyait la maquette)
-- [ ] Tests unitaires Python sur le moteur de jalons et la notation
-- [ ] Décider du sort de la page 2D `/labs/signal/[experiment]` : conservée pour
-      l'accessibilité (écran étroit, clavier seul, pas de WebGL), à retirer si la
-      salle doit être le seul chemin
+- [ ] Profil public d'un membre (questions, réponses, réputation)
+- [ ] Classement des entraideurs par filière
+- [ ] Fil « Ma filière » par défaut, questions sans réponse en premier
+- [ ] Suivre une question
+- [ ] Commentaires courts sous une réponse
+- [ ] Référencement Google (pages de questions rendues côté serveur)
 
-### Suite produit (fiche technique §13)
+### Plus tard (note de concept)
 
-| Version | Contenu |
-|---|---|
-| **V0.1** *(ici)* | Auth, profil, avatar, salle 3D, SignalLab, 5 TP, scoring, XP |
-| V0.2 | Laplace, convolution, filtres avancés — déjà seedés, à publier |
-| V0.3 | Espace professeur, classes, analytics — SignManager en est la base |
-| V0.4 | AI Tutor contextualisé |
-| V0.5 | TelecomLab : PABX, SIP, VoIP, GSM |
-| V1 | Laboratoires collaboratifs, campus virtuel RIT |
-
-### Dette connue
-
-- Géométrie 3D **procédurale**, pas d'assets Blender. Le code est structuré pour
-  la bascule : noms de meshes, points d'ancrage et colliders suivent déjà la
-  convention d'export, `useGLTF` remplacera `Room`/`Furniture`/`Instruments`.
-- Pas de LOD ni de normal maps.
-- Pas de WebSocket ni de multi-utilisateur — hors périmètre MVP, assumé.
+Assistant IA (payant, avec quota gratuit), messagerie privée, application
+mobile, réouverture des ressources, envois WhatsApp groupés (examens) aux
+membres consentants, à rythme limité.
 
 ---
 
@@ -312,15 +254,87 @@ Ce harnais a trouvé quatre bugs invisibles à la lecture du code :
 
 | Sujet | Fichier |
 |---|---|
-| Cotes de la salle — **source unique** | `client/lib/lab3d/specs.ts` |
+| Questions, réponses, votes, merci | `sign/backend/app/client/service/community_service.py` |
+| Notifications et WhatsApp | `sign/backend/app/client/service/notify_service.py` |
+| Codes WhatsApp (gowa) | `sign/backend/app/client/service/otp_service.py` |
+| Photos | `sign/backend/app/client/service/upload_service.py` |
+| Compte (mot de passe, numéro, suppression) | `sign/backend/app/client/service/account_service.py` |
+| Connexion, sessions, blocage | `sign/backend/app/admin/service/auth_service.py` |
+| Modèles communauté | `sign/backend/models/community.py` |
+| Comptes de démo | `sign/backend/seeder/demo.py` |
+| Réglages (OTP, WhatsApp, photos, ressources) | `sign/backend/core/conf.py` |
+| Filières, exemples, contact | `client/lib/community.ts`, `client/components/landing/example-questions.tsx` |
+| Page question, formulaire | `client/app/(community)/questions/`, `client/components/community/` |
+| Relais vers l'API | `client/lib/server/proxy.ts` |
+| Production | `compose.image.yml`, `.github/workflows/build.yml` |
+
+---
+
+# Annexe — le labo virtuel (onglet Lab)
+
+Ex-SignalLab, intégré à STOUDENT sans changement de fond. Point d'avancement du
+labo au **18 septembre 2026**, toujours valable.
+
+## A. En une phrase
+
+Un étudiant entre dans une salle de TP en 3D, pilote son avatar jusqu'à un
+poste, y ouvre un TP sans quitter la salle, règle des instruments dont les
+écrans affichent la vraie courbe calculée par le moteur scientifique, se fait
+noter **sur ce qu'il a manipulé**, gagne de l'XP et des badges.
+
+## B. Le contrat 3D ↔ simulation
+
+Le 3D (React Three Fiber) **ne calcule rien** : il affiche ce que FastAPI a
+renvoyé. Toute la physique du signal est en Python (NumPy / SciPy / SymPy).
+
+```
+Étudiant → manipulation 3D → paramètres → FastAPI → NumPy/SciPy/SymPy
+                                                         ↓
+              écran de l'instrument  ←  Three.js  ←  résultats
+```
+
+## C. Ce qui fonctionne
+
+**Moteur scientifique** : six services purs (`sign/backend/services/`),
+**41 contrôles de physique** passent (fondamentale d'un carré `4A/π`,
+Butterworth −3 dB à la coupure et −80 dB/décade à l'ordre 4, repliement 5 kHz
+@ 6 kHz → 1 kHz, résolution 50 Hz sur 20 ms, pôle d'un RC). Une expression
+Laplace malveillante est refusée (400), une demande de 10⁸ échantillons aussi
+(422).
+
+**Parcours** : 5 TP publiés (signaux élémentaires, série de Fourier,
+transformée de Fourier, échantillonnage, filtrage) ; convolution et Laplace
+seedés mais non publiés. Chaque TP : rappel de cours, exemple résolu en
+6 étapes, protocole, **jalons de manipulation**, questions de lecture.
+
+**Salle 3D** aux cotes de la spécification (12 × 10 × 3,20 m, 4 postes, baie
+42U, grand écran, tableau blanc). Avatar piloté comme dans un jeu (3ᵉ/1ʳᵉ
+personne, ZQSD/flèches, manche virtuel, collisions).
+
+## D. Décisions
+
+- **React Three Fiber au lieu de Babylon.js** : meilleure maquette, Babylon
+  retiré. React épinglé en `~19.2.0` (`@react-three/fiber@9` exige `< 19.3`).
+- **La formule est donnée avant la manipulation**, avec un exercice corrigé ;
+  la synthèse est débloquée à la fin.
+- **La note vient du geste** : 60 à 75 % des points viennent du banc. Un jalon
+  atteint reste acquis ; conditions déclaratives, jamais évaluées.
+
+## E. Ce qui reste pour le labo
+
+- [ ] Test automatisé de l'ouverture d'un poste dans la salle 3D
+- [ ] Brancher les écrans des instruments de la salle sur l'API (synthèse
+      locale aujourd'hui)
+- [ ] Tests unitaires du moteur de jalons et de la notation
+- [ ] Publier convolution et Laplace (changement de drapeau)
+- [ ] Labo Télécom (PABX, SIP, VoIP, GSM), labos pour d'autres filières
+- [ ] Assets Blender à la place de la géométrie procédurale (`useGLTF`)
+
+| Sujet | Fichier |
+|---|---|
+| Cotes de la salle (source unique) | `client/lib/lab3d/specs.ts` |
 | Pilotage de l'avatar | `client/components/world3d/Player.tsx` |
 | Poste de travail en salle | `client/components/world3d/StationPanel.tsx` |
 | Contenu pédagogique | `sign/backend/seeder/signallab.py` |
 | Notation par la manipulation | `sign/backend/app/client/service/milestones.py` |
 | Moteur scientifique | `sign/backend/services/` |
-| Garde par rôle | `sign/backend/common/security/roles.py` |
-
-Une cote ne s'écrit jamais dans un composant : déplacer un poste ou changer une
-dimension se fait dans `specs.ts` et se propage à la géométrie, aux collisions
-et aux points d'ancrage. Un énoncé se corrige dans le seeder, puis
-`seed-labs` — c'est idempotent, la progression des étudiants est préservée.
