@@ -4,7 +4,7 @@ import html, json, re, sys, time, urllib.request
 BASE = 'https://www.fomesoutra.com'
 ROOT = sys.argv[2] if len(sys.argv) > 2 else '/sujets/superieur-1/bts'
 STARTS = sys.argv[3].split(',') if len(sys.argv) > 3 else [ROOT]
-UA = 'STOUDENT-catalogue/1.0 (+https://stoudent.kortex.sbs; contact@kortex.sbs)'
+UA = 'STOUDENT-catalogue/1.0 (+https://stoudent.kortex.sbs; contact@kortexdigital.net)'
 DELAY = 6
 out_path = sys.argv[1]
 

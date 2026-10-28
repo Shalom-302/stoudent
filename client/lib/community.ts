@@ -57,7 +57,7 @@ export function kindLabel(kind: string): string {
 }
 
 /** Where members send data requests (privacy page). */
-export const PRIVACY_CONTACT = 'contact@kortex.sbs';
+export const PRIVACY_CONTACT = 'contact@kortexdigital.net';
 
 export const LEVELS = ['BTS 1', 'BTS 2', 'Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2', 'Ingénieur'];
 

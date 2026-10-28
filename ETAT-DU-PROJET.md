@@ -203,7 +203,7 @@ cd client && npm install && npm run dev  # site sur :3000, relaie vers :8000
 | Infrastructure | En-têtes de sécurité, hôtes de confiance, Postgres et MinIO non exposés, refus de démarrer avec des secrets de dev. |
 
 La politique de confidentialité (`/confidentialite`) décrit tout cela. Contact
-données : `contact@kortex.sbs` (constante `PRIVACY_CONTACT`, à confirmer).
+données : `contact@kortexdigital.net` (constante `PRIVACY_CONTACT`).
 
 ---
 
@@ -258,7 +258,7 @@ plantaient sur une base neuve, verrou SQL incompatible avec une jointure.
 - [ ] **Sauvegardes automatiques de Postgres** (Dokploy, vers un stockage
       externe) : à mettre en place quand le trafic le justifiera.
 - [ ] Déclaration ARTCI (base de numéros de téléphone).
-- [ ] Confirmer l'adresse de contact données (`PRIVACY_CONTACT`).
+- [x] Adresse de contact données confirmée : contact@kortexdigital.net.
 
 ### Prochaines fonctions
 
