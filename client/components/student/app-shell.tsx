@@ -5,6 +5,7 @@ import {
   Boxes,
   FlaskConical,
   LayoutDashboard,
+  Library,
   LogOut,
   Menu,
   MessageCircleQuestion,
@@ -45,6 +46,7 @@ const LAB_NAV: NavItem[] = [
 
 const NAV: NavItem[] = [
   { href: '/questions', label: 'Questions', icon: MessageCircleQuestion },
+  { href: '/bibliotheque', label: 'Bibliothèque', icon: Library },
   {
     href: '/dashboard',
     label: 'Lab',

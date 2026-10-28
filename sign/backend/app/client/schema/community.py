@@ -68,6 +68,9 @@ class VoteParam(SchemaBase):
     value: Literal[-1, 0, 1]
 
 
+ResourceKind = Literal['sujet', 'corrige', 'cours', 'td', 'autre']
+
+
 class CreateResourceParam(SchemaBase):
     title: str = Field(min_length=5, max_length=200)
     url: HttpUrl
@@ -75,6 +78,10 @@ class CreateResourceParam(SchemaBase):
     subject: str | None = Field(default=None, max_length=100)
     source: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=1000)
+    kind: ResourceKind = 'autre'
+    chapter: str | None = Field(default=None, max_length=150)
+    session_year: int | None = Field(default=None, ge=1990, le=2100)
+    original_author: str | None = Field(default=None, max_length=150)
 
     @field_validator('url')
     @classmethod
@@ -84,7 +91,7 @@ class CreateResourceParam(SchemaBase):
         return v
 
 
-ReportReason = Literal['spam', 'offensive', 'off_topic', 'plagiarism', 'broken_link', 'other']
+ReportReason = Literal['spam', 'offensive', 'off_topic', 'plagiarism', 'copyright', 'broken_link', 'other']
 
 
 class CreateReportParam(SchemaBase):
@@ -150,6 +157,11 @@ class ResourceDetail(SchemaBase):
     subject: str | None = None
     source: str | None = None
     description: str | None = None
+    kind: str = 'autre'
+    chapter: str | None = None
+    session_year: int | None = None
+    original_author: str | None = None
+    open_count: int = 0
     created_time: datetime
     author: AuthorDetail
 

@@ -8,6 +8,10 @@ cd backend
 # auto-generated at boot.
 alembic upgrade head
 
+# The BTS library ships with the image: refresh it at every start (idempotent,
+# a few hundred rows). A failure is logged, it must not keep the API down.
+(cd .. && python -m backend.cli seed-library) || echo "[warn] seed-library failed, the API starts anyway"
+
 # Live-reload in development (the source is bind-mounted by the dev compose).
 # In production (ENVIRONMENT=prod) the baked-in code is served without reload.
 RELOAD=""

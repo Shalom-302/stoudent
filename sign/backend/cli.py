@@ -84,6 +84,13 @@ async def seed_labs() -> int:
     return await seed()
 
 
+async def seed_library() -> int:
+    """Seed the BTS library (links to sujets, corrigés, cours, TD). Idempotent."""
+    from backend.seeder.library import seed
+
+    return await seed()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="backend.cli", description="sign project management commands"
@@ -106,6 +113,10 @@ def main() -> int:
         "seed-labs", help="Seed the lab catalogue (labs, experiments, badges)"
     )
 
+    sub.add_parser(
+        "seed-library", help="Seed the BTS library (links and attribution, never copies)"
+    )
+
     args = parser.parse_args()
     if args.command == "create-admin":
         return asyncio.run(create_admin(args.email, args.password, args.pseudo))
@@ -115,6 +126,8 @@ def main() -> int:
         return asyncio.run(seed_demo(args.password))
     if args.command == "seed-labs":
         return asyncio.run(seed_labs())
+    if args.command == "seed-library":
+        return asyncio.run(seed_library())
     return 1
 
 

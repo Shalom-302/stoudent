@@ -6,7 +6,9 @@ import type {
   QuestionDetail,
   QuestionSummary,
   ReportReason,
+  ResourceFacets,
   ResourceItem,
+  ResourceKind,
 } from '@/types';
 
 export type QuestionSort = 'recent' | 'votes' | 'active' | 'unanswered';
@@ -36,6 +38,23 @@ export interface ResourcePayload {
   subject?: string;
   source?: string;
   description?: string;
+  kind?: ResourceKind;
+  chapter?: string;
+  session_year?: number;
+  original_author?: string;
+}
+
+export type ResourceSort = 'recent' | 'popular' | 'subject';
+
+export interface ResourceFilters {
+  filiere?: string;
+  subject?: string;
+  kind?: ResourceKind;
+  year?: number;
+  q?: string;
+  sort?: ResourceSort;
+  page?: number;
+  size?: number;
 }
 
 function query(params: object): string {
@@ -87,10 +106,12 @@ export const communityService = {
       value,
     }),
 
-  resources: (filters: { filiere?: string; subject?: string; q?: string; page?: number }) =>
-    api.get<Paged<ResourceItem>>(`/community/resources${query(filters)}`),
+  resources: (filters: ResourceFilters) => api.get<Paged<ResourceItem>>(`/community/resources${query(filters)}`),
+  resourceFacets: (filters: Pick<ResourceFilters, 'filiere' | 'subject' | 'kind'>) =>
+    api.get<ResourceFacets>(`/community/resources/facets${query(filters)}`),
+  openResource: (xId: string) => api.post<{ url: string; open_count: number }>(`/community/resources/${xId}/open`),
   shareResource: (payload: ResourcePayload) =>
-    api.post<{ x_id: string }>('/community/resources', payload),
+    api.post<{ x_id: string; status: string }>('/community/resources', payload),
 
   report: (
     targetType: 'question' | 'answer' | 'resource',

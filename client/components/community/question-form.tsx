@@ -40,12 +40,15 @@ export function FormattingHint() {
 
 export function QuestionForm({
   initial,
+  defaults,
   submitLabel,
   pendingLabel,
   cancelHref,
   onSubmit,
 }: {
   initial?: AskPayload;
+  /** Prefilled fields for a new question (from a library document). */
+  defaults?: Partial<AskPayload>;
   submitLabel: string;
   pendingLabel: string;
   cancelHref: string;
@@ -55,10 +58,10 @@ export function QuestionForm({
   const profile = useQuery({ queryKey: ['student'], queryFn: studentService.me, enabled: !editing });
   const meta = useQuery({ queryKey: ['community', 'meta'], queryFn: communityService.meta, staleTime: 5 * 60_000 });
 
-  const [title, setTitle] = React.useState(initial?.title ?? '');
-  const [body, setBody] = React.useState(initial?.body ?? '');
-  const [filiere, setFiliere] = React.useState(initial?.filiere ?? '');
-  const [subject, setSubject] = React.useState(initial?.subject ?? '');
+  const [title, setTitle] = React.useState(initial?.title ?? defaults?.title ?? '');
+  const [body, setBody] = React.useState(initial?.body ?? defaults?.body ?? '');
+  const [filiere, setFiliere] = React.useState(initial?.filiere ?? defaults?.filiere ?? '');
+  const [subject, setSubject] = React.useState(initial?.subject ?? defaults?.subject ?? '');
   const [tags, setTags] = React.useState(initial?.tags.join(', ') ?? '');
   const [imageUrl, setImageUrl] = React.useState<string | undefined>(initial?.image_url);
   const [uploading, setUploading] = React.useState(false);

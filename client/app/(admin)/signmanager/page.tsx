@@ -5,6 +5,7 @@ import { Award, GraduationCap, Target, UserCheck, Users, Zap } from 'lucide-reac
 import * as React from 'react';
 
 import { ModerationQueue } from '@/components/admin/moderation-queue';
+import { PendingResources } from '@/components/admin/pending-resources';
 import { StudentTable } from '@/components/admin/student-table';
 import { StatCard } from '@/components/student/level-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,6 +77,7 @@ export default function SignManagerPage() {
 
         <TabsContent value="moderation">
           <ModerationQueue />
+          <PendingResources />
         </TabsContent>
 
         <TabsContent value="experiments">

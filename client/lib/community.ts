@@ -16,6 +16,13 @@ export const BTS_FILIERES = [
   { code: 'RHC', name: 'Ressources Humaines et Communication' },
   { code: 'LOG', name: 'Logistique' },
   { code: 'AD', name: 'Assistanat de Direction' },
+  { code: 'FA', name: 'Finance Assurance' },
+  { code: 'CJ', name: 'Carrières Juridiques' },
+  { code: 'TH', name: 'Tourisme Hôtellerie' },
+  { code: 'GCB', name: 'Génie Civil option Bâtiment' },
+  { code: 'MMA', name: 'Moteur et Mécanique Automobile' },
+  { code: 'SDI', name: 'Sciences de l’Information' },
+  { code: 'GCT', name: 'Gestion des Collectivités Territoriales' },
 ] as const;
 
 export const FILIERES: string[] = BTS_FILIERES.map((f) => f.code);
@@ -24,6 +31,29 @@ export const FILIERES: string[] = BTS_FILIERES.map((f) => f.code);
 export function filiereLabel(code: string): string {
   const known = BTS_FILIERES.find((f) => f.code.toLowerCase() === code.toLowerCase());
   return known ? `${known.code} · ${known.name}` : code;
+}
+
+/** Library documents that apply to every filière (français, anglais, maths générales…). */
+export const TRONC_COMMUN = 'Tronc commun';
+
+/** Library shelves shared by a family of filières (the exam's FI / FT papers). */
+export const FILIERE_GROUPS: Record<string, string> = {
+  [TRONC_COMMUN]: 'Français, anglais, maths… communs à toutes les filières',
+  FI: 'Filières industrielles : épreuves communes (maths, économie, gestion…)',
+  FT: 'Filières tertiaires : épreuves communes',
+};
+
+/** The library's document types, in the order the filters show them. */
+export const RESOURCE_KINDS = [
+  { value: 'sujet', label: 'Sujet', plural: 'Sujets d’examen' },
+  { value: 'corrige', label: 'Corrigé', plural: 'Corrigés' },
+  { value: 'cours', label: 'Cours', plural: 'Cours' },
+  { value: 'td', label: 'TD', plural: 'TD et exercices' },
+  { value: 'autre', label: 'Document', plural: 'Autres' },
+] as const;
+
+export function kindLabel(kind: string): string {
+  return RESOURCE_KINDS.find((k) => k.value === kind)?.label ?? 'Document';
 }
 
 /** Where members send data requests (privacy page). */
@@ -36,6 +66,7 @@ export const REPORT_REASONS = [
   { value: 'offensive', label: 'Propos offensants' },
   { value: 'off_topic', label: 'Hors sujet' },
   { value: 'plagiarism', label: 'Copie sans attribution' },
+  { value: 'copyright', label: 'Je suis l’auteur, retirez-le' },
   { value: 'broken_link', label: 'Lien cassé' },
   { value: 'other', label: 'Autre' },
 ] as const;

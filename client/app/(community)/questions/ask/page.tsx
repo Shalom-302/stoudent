@@ -1,14 +1,30 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { toast } from 'sonner';
 
 import { QuestionForm } from '@/components/community/question-form';
 import { AuthGuard } from '@/features/auth/auth-guard';
 import { communityService } from '@/services/community';
 
-export default function AskPage() {
+/** Opened from a library document: its filière, matière and title prefill the form. */
+function useDefaults() {
+  const params = useSearchParams();
+  const doc = params.get('doc');
+  const url = params.get('url');
+  return {
+    filiere: params.get('filiere') ?? undefined,
+    subject: params.get('subject') ?? undefined,
+    body: doc ? `À propos du document « ${doc} »${url ? ` (${url})` : ''} :
+
+` : undefined,
+  };
+}
+
+function Ask() {
   const router = useRouter();
+  const defaults = useDefaults();
   return (
     <AuthGuard>
       <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
@@ -17,6 +33,7 @@ export default function AskPage() {
           Une bonne question explique ce que vous avez déjà essayé. Vous aurez une meilleure réponse.
         </p>
         <QuestionForm
+          defaults={defaults}
           submitLabel="Publier la question"
           pendingLabel="Publication…"
           cancelHref="/questions"
@@ -28,5 +45,13 @@ export default function AskPage() {
         />
       </div>
     </AuthGuard>
+  );
+}
+
+export default function AskPage() {
+  return (
+    <Suspense>
+      <Ask />
+    </Suspense>
   );
 }

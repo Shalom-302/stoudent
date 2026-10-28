@@ -8,7 +8,7 @@ is worth more than a useful question, and an accepted answer most of all.
 from urllib.parse import urlparse
 
 from fastapi import BackgroundTasks
-from sqlalchemy import delete, func, or_, select, update
+from sqlalchemy import String, cast, delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
 from backend.app.client.service.notify_service import add_notification, notify_first_answer
@@ -40,7 +40,7 @@ VIEW_WINDOW_SECONDS = 3600
 
 # Shown in the filters before the community has created its own.
 # The BTS filières STOUDENT opens with (codes; names live in client/lib/community.ts).
-DEFAULT_FILIERES = ['RIT', 'IDA', 'ELT', 'SEI', 'MSP', 'FC', 'GC', 'RHC', 'LOG', 'AD']
+DEFAULT_FILIERES = ['RIT', 'IDA', 'ELT', 'SEI', 'MSP', 'FC', 'GC', 'RHC', 'LOG', 'AD', 'FA', 'CJ', 'TH', 'GCB', 'MMA', 'SDI', 'GCT']
 
 def _excerpt(text: str) -> str:
     flat = ' '.join(text.split())
@@ -571,41 +571,88 @@ class CommunityService:
             return {'score': target.score, 'my_vote': obj.value}
 
     # -- Resources ----------------------------------------------------------
+    # A library of links: the document stays on the site that hosts it, STOUDENT
+    # keeps where to find it and who it comes from.
 
     @staticmethod
-    async def list_resources(*, filiere: str | None, subject: str | None, q: str | None, page: int, size: int) -> dict:
-        async with async_db_session() as db:
-            stmt = select(Resource).where(Resource.is_hidden.is_(False))
-            if filiere:
-                stmt = stmt.where(func.lower(Resource.filiere) == filiere.lower())
-            if subject:
-                stmt = stmt.where(func.lower(Resource.subject) == subject.lower())
-            if q:
-                pattern = f'%{q}%'
+    def _resource_filters(stmt, *, filiere, subject, kind, year, q):
+        stmt = stmt.where(Resource.is_hidden.is_(False), Resource.status == 'published')
+        if filiere:
+            stmt = stmt.where(func.lower(Resource.filiere) == filiere.lower())
+        if subject:
+            stmt = stmt.where(func.lower(Resource.subject) == subject.lower())
+        if kind:
+            stmt = stmt.where(Resource.kind == kind)
+        if year:
+            stmt = stmt.where(Resource.session_year == year)
+        if q:
+            # Every word must match somewhere ("maths 2024 ida").
+            for word in q.split()[:6]:
+                pattern = f'%{word}%'
                 stmt = stmt.where(
-                    or_(Resource.title.ilike(pattern), Resource.description.ilike(pattern), Resource.source.ilike(pattern))
+                    or_(
+                        Resource.title.ilike(pattern),
+                        Resource.subject.ilike(pattern),
+                        Resource.chapter.ilike(pattern),
+                        Resource.filiere.ilike(pattern),
+                        Resource.description.ilike(pattern),
+                        Resource.source.ilike(pattern),
+                        Resource.original_author.ilike(pattern),
+                        cast(Resource.session_year, String).ilike(pattern),
+                    )
                 )
+        return stmt
+
+    @staticmethod
+    def _resource_item(r: Resource, profiles: dict) -> dict:
+        return {
+            'x_id': r.x_id,
+            'title': r.title,
+            'url': r.url,
+            'domain': (urlparse(r.url).hostname or '').removeprefix('www.'),
+            'filiere': r.filiere,
+            'subject': r.subject,
+            'source': r.source,
+            'description': r.description,
+            'kind': r.kind,
+            'chapter': r.chapter,
+            'session_year': r.session_year,
+            'original_author': r.original_author,
+            'open_count': r.open_count,
+            'created_time': r.created_time,
+            'author': _author(r.author, profiles.get(r.author_id)),
+        }
+
+    @staticmethod
+    async def list_resources(
+        *,
+        filiere: str | None,
+        subject: str | None,
+        q: str | None,
+        page: int,
+        size: int,
+        kind: str | None = None,
+        year: int | None = None,
+        sort: str = 'recent',
+    ) -> dict:
+        async with async_db_session() as db:
+            stmt = CommunityService._resource_filters(
+                select(Resource), filiere=filiere, subject=subject, kind=kind, year=year, q=q
+            )
             total = (await db.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
+            if sort == 'popular':
+                order = (Resource.open_count.desc(), Resource.id.desc())
+            elif sort == 'subject':
+                order = (Resource.subject.asc().nulls_last(), Resource.session_year.desc().nulls_last(), Resource.id)
+            else:
+                # Latest session first, then the most recently added.
+                order = (Resource.session_year.desc().nulls_last(), Resource.id.desc())
             rows = (
-                await db.execute(stmt.order_by(Resource.id.desc()).offset((page - 1) * size).limit(size))
+                await db.execute(stmt.order_by(*order).offset((page - 1) * size).limit(size))
             ).unique().scalars().all()
             profiles = await _profiles_by_user(db, {r.author_id for r in rows})
             return {
-                'items': [
-                    {
-                        'x_id': r.x_id,
-                        'title': r.title,
-                        'url': r.url,
-                        'domain': urlparse(r.url).hostname or '',
-                        'filiere': r.filiere,
-                        'subject': r.subject,
-                        'source': r.source,
-                        'description': r.description,
-                        'created_time': r.created_time,
-                        'author': _author(r.author, profiles.get(r.author_id)),
-                    }
-                    for r in rows
-                ],
+                'items': [CommunityService._resource_item(r, profiles) for r in rows],
                 'total': int(total),
                 'page': page,
                 'size': size,
@@ -613,26 +660,87 @@ class CommunityService:
             }
 
     @staticmethod
+    async def resource_facets(*, filiere: str | None, subject: str | None, kind: str | None) -> dict:
+        """Counts for the library's filters.
+
+        Each facet is counted with the other filters applied but not its own,
+        so a student sees how many documents each choice leaves.
+        """
+        current = {'filiere': filiere, 'subject': subject, 'kind': kind, 'year': None, 'q': None}
+        everything = {'filiere': None, 'subject': None, 'kind': None, 'year': None, 'q': None}
+
+        def counted(column, scope: dict, limit: int = 60):
+            stmt = CommunityService._resource_filters(select(column, func.count()), **scope)
+            return stmt.where(column.is_not(None)).group_by(column).order_by(func.count().desc()).limit(limit)
+
+        async with async_db_session() as db:
+            filieres = (await db.execute(counted(Resource.filiere, everything))).all()
+            subjects = (await db.execute(counted(Resource.subject, {**current, 'subject': None}))).all()
+            kinds = (await db.execute(counted(Resource.kind, {**current, 'kind': None}))).all()
+            years = (await db.execute(counted(Resource.session_year, current))).all()
+            sources = (await db.execute(counted(Resource.source, everything, limit=10))).all()
+            total = (
+                await db.execute(CommunityService._resource_filters(select(func.count(Resource.id)), **everything))
+            ).scalar_one()
+
+        def pairs(rows):
+            return [{'value': value, 'count': count} for value, count in rows]
+
+        return {
+            'total': int(total),
+            'filieres': pairs(filieres),
+            'subjects': pairs(subjects),
+            'kinds': pairs(kinds),
+            'years': sorted(pairs(years), key=lambda y: -y['value']),
+            'sources': pairs(sources),
+        }
+
+    @staticmethod
+    async def open_resource(*, x_id: str) -> dict:
+        """Count a visit to the original and hand back where it lives."""
+        async with async_db_session.begin() as db:
+            resource = (
+                await db.execute(
+                    select(Resource).where(
+                        Resource.x_id == x_id, Resource.is_hidden.is_(False), Resource.status == 'published'
+                    )
+                )
+            ).unique().scalars().first()
+            if resource is None:
+                raise errors.NotFoundError(msg='Ressource introuvable.')
+            resource.open_count += 1
+            return {'url': resource.url, 'open_count': resource.open_count}
+
+    @staticmethod
     async def create_resource(*, user_id: int, obj: CreateResourceParam) -> dict:
+        def clean(value: str | None) -> str | None:
+            return (value or '').strip() or None
+
         async with async_db_session.begin() as db:
             url = str(obj.url)
             duplicate = (
                 await db.execute(select(Resource.id).where(Resource.url == url, Resource.is_hidden.is_(False)))
             ).first()
             if duplicate:
-                raise errors.ForbiddenError(msg='Ce lien a déjà été partagé.')
+                raise errors.ForbiddenError(msg='Ce lien est déjà dans la bibliothèque.')
             resource = Resource(
                 author_id=user_id,
                 title=obj.title.strip(),
                 url=url,
                 filiere=obj.filiere.strip(),
-                subject=obj.subject.strip() if obj.subject else None,
-                source=obj.source.strip() if obj.source else None,
-                description=obj.description.strip() if obj.description else None,
+                subject=clean(obj.subject),
+                source=clean(obj.source) or (urlparse(url).hostname or '').removeprefix('www.') or None,
+                description=clean(obj.description),
+                kind=obj.kind,
+                chapter=clean(obj.chapter),
+                session_year=obj.session_year,
+                original_author=clean(obj.original_author),
+                # A member's link is checked by an admin before it is listed.
+                status='pending',
             )
             db.add(resource)
             await db.flush()
-            return {'x_id': resource.x_id}
+            return {'x_id': resource.x_id, 'status': resource.status}
 
     # -- Reports ------------------------------------------------------------
 

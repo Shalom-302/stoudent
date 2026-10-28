@@ -39,7 +39,7 @@ const FEATURES = [
   { title: 'Fil par filière', text: 'RIT, IDA, Télécoms, Gestion… filtrez par filière, matière ou mot-clé.' },
   { title: 'Votes & meilleure réponse', text: 'Les explications utiles remontent, la solution retenue est mise en avant.' },
   { title: 'Professeurs vérifiés', text: 'Les profs rejoignent la communauté et valident les réponses justes.' },
-  { title: 'Filière et matière', text: 'Chaque question porte sa filière et sa matière : vous voyez d’abord ce qui vous concerne.' },
+  { title: 'Bibliothèque BTS', text: 'Sujets d’examen, corrigés, cours et TD classés par filière, matière et session, avec leur source.' },
   { title: 'Recherche anti-doublons', text: 'Retrouvez la question déjà posée avant d’en ouvrir une nouvelle.' },
   { title: 'Modération', text: 'Signalement en un clic, contenus abusifs masqués, règles simples.' },
 ];
@@ -242,6 +242,7 @@ export function Landing() {
             <a href="#fonctionnalites" className="hover:text-ink-900">Fonctionnalités</a>
             <a href="#lab" className="hover:text-ink-900">Le labo</a>
             <Link href="/questions" className="hover:text-ink-900">Les questions</Link>
+            <Link href="/bibliotheque" className="hover:text-ink-900">Sujets & cours</Link>
           </nav>
           <div className="ml-auto flex items-center gap-2">
             {authed ? (

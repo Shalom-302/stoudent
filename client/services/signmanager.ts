@@ -1,5 +1,5 @@
 import { adminApi } from '@/lib/api';
-import type { Paged, ReportQueueItem } from '@/types';
+import type { Paged, PendingResource, ReportQueueItem } from '@/types';
 
 export interface OverviewCounters {
   total_students: number;
@@ -104,6 +104,9 @@ export const signManagerService = {
   reports: (status: 'open' | 'resolved' | 'dismissed' = 'open', page = 1) =>
     adminApi.get<Paged<ReportQueueItem>>(`/moderation/reports?status=${status}&page=${page}`),
 
+  pendingResources: () => adminApi.get<{ items: PendingResource[] }>('/moderation/resources/pending'),
+  reviewResource: (xId: string, action: 'approve' | 'reject') =>
+    adminApi.post<{ status: string }>(`/moderation/resources/${xId}/review`, { action }),
   resolve: (targetType: ReportQueueItem['target_type'], xId: string, action: 'hide' | 'restore' | 'dismiss') =>
     adminApi.post<{ is_hidden: boolean }>(`/moderation/${targetType}/${xId}/resolve`, { action }),
 };

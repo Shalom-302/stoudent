@@ -17,8 +17,8 @@ Un étudiant s'inscrit avec son numéro WhatsApp et sa filière, pose une questi
 WhatsApp quand on lui répond, et reste connecté sur son téléphone. Le labo
 virtuel 3D (ex-SignalLab) est inclus sous l'onglet **Lab**.
 
-Le périmètre MVP de la note de concept est couvert, ressources mises à part
-(fermées au lancement, voir §6).
+Le périmètre MVP de la note de concept est couvert, y compris les ressources :
+la **Bibliothèque BTS** (1 230 sujets, corrigés, cours et TD) est ouverte.
 
 ---
 
@@ -55,6 +55,28 @@ Le périmètre MVP de la note de concept est couvert, ressources mises à part
   variations sont réversibles.
 - **Signalements** : un contenu signalé par 3 membres est masqué en attendant
   la modération.
+
+### Bibliothèque BTS (`/bibliotheque`)
+
+- **1 230 documents** repérés sur fomesoutra.com : 674 sujets d'examen,
+  244 corrigés, 232 cours, 77 TD. Ils sont rangés par **filière** (20, dont les
+  rayons communs *Tronc commun*, *FI* et *FT*), **matière**, **chapitre** quand
+  la source le précise, **type** et **session**.
+- **Liens, jamais de copie.** Chaque fiche ouvre la page du document chez son
+  hébergeur (pas le lien de téléchargement direct) et affiche la source et
+  l'auteur (« Source : fomesoutra.com · Auteur : TEHUA »). Les livres
+  d'éditeurs sont écartés. Encadré « Droits d'auteur » sur la page, motif de
+  signalement « Je suis l'auteur, retirez-le ».
+- Filtres avec compteurs, recherche multi-mots (« maths 2026 »), tris (sessions
+  récentes, par matière, les plus consultés), filtres dans l'URL (partageables).
+- **« Poser une question »** sur une fiche ouvre le formulaire prérempli
+  (filière, matière, lien du document).
+- **Proposer un document** (connecté) : le lien attend la validation d'un admin
+  dans SignManager > Modération > *Documents proposés*.
+- Le catalogue est dans l'image (`seeder/data/library_bts.json`) et rechargé à
+  chaque démarrage de l'API (`seed-library`, idempotent). Retirer une ligne du
+  JSON retire le document au démarrage suivant. Pour rafraîchir le catalogue :
+  `sign/tools/library/README.md`.
 
 ### Notifications
 
@@ -187,10 +209,12 @@ données : `contact@kortex.sbs` (constante `PRIVACY_CONTACT`, à confirmer).
 
 ## 6. Décisions et écarts assumés
 
-- **Ressources fermées au lancement.** Le module (liens attribués par filière)
-  est codé et testé, mais caché : page redirigée, API en 404 tant que
-  `COMMUNITY_RESOURCES_ENABLED=false`. Le code est dans
-  `client/components/community/resources-view.tsx`.
+- **Bibliothèque en liens, pas en fichiers.** Citer la source ne donne pas le
+  droit de recopier un PDF : STOUDENT relève titre et lien (en respectant le
+  robots.txt de fomesoutra), l'étudiant télécharge chez l'hébergeur. Héberger
+  des fichiers demanderait l'accord écrit des auteurs ou du site. Scribd est
+  exclu (conditions d'utilisation, compte requis).
+  `COMMUNITY_RESOURCES_ENABLED=false` referme la bibliothèque si besoin.
 - **WhatsApp volontairement rare.** Un message par question, jamais pour les
   votes, merci, validations : tout le reste passe par la cloche. Objectif : ne
   pas être perçu comme du spam, et ne pas faire bannir le numéro gowa.
@@ -209,7 +233,10 @@ Tous reproductibles, lancés avant chaque push :
 
 | Suite | Contenu | Dernier passage |
 |---|---|---|
-| API communauté | inscription, questions, réponses, votes, réputation, signalements, ressources fermées | 34/34 |
+| API communauté | inscription, questions, réponses, votes, réputation, signalements | 34/34 |
+| API bibliothèque | facettes, filtres, recherche, compteur de visites, proposition en attente, doublon, validation/refus admin, signalement droits d'auteur | 23/23 |
+| Bibliothèque, base neuve | migrations + `seed-library` avant la création des tables par l'API ; 2ᵉ passage sans doublon | OK |
+| Navigateur (bibliothèque) | bureau et mobile 390 px : pas de défilement horizontal, 0 erreur console | OK |
 | API sessions | cookie seul, rotation, multi-appareils, mot de passe oublié, blocage | 18/18 |
 | API fonctions | photos, notifications, merci, modification, suppression | 21/21 |
 | API compte | mot de passe, numéro, suppression et anonymisation | 21/21 |
@@ -245,7 +272,7 @@ plantaient sur une base neuve, verrou SQL incompatible avec une jointure.
 ### Plus tard (note de concept)
 
 Assistant IA (payant, avec quota gratuit), messagerie privée, application
-mobile, réouverture des ressources, envois WhatsApp groupés (examens) aux
+mobile, partenariat avec fomesoutra et dépôt de cours par les professeurs vérifiés, envois WhatsApp groupés (examens) aux
 membres consentants, à rythme limité.
 
 ---
@@ -264,6 +291,7 @@ membres consentants, à rythme limité.
 | Comptes de démo | `sign/backend/seeder/demo.py` |
 | Réglages (OTP, WhatsApp, photos, ressources) | `sign/backend/core/conf.py` |
 | Filières, exemples, contact | `client/lib/community.ts`, `client/components/landing/example-questions.tsx` |
+| Bibliothèque (page, API, catalogue) | `client/components/community/library-view.tsx`, `community_service.py` (Resources), `seeder/library.py`, `seeder/data/library_bts.json` |
 | Page question, formulaire | `client/app/(community)/questions/`, `client/components/community/` |
 | Relais vers l'API | `client/lib/server/proxy.ts` |
 | Production | `compose.image.yml`, `.github/workflows/build.yml` |

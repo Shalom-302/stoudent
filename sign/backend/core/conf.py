@@ -186,8 +186,8 @@ class Settings(BaseSettings):
     UPLOAD_MAX_BYTES: int = 8 * 1024 * 1024
     UPLOAD_MAX_SIDE: int = 1600
 
-    # Shared resources (links): closed for the launch.
-    COMMUNITY_RESOURCES_ENABLED: bool = False
+    # The library (links to sujets, corrigés, cours and TD, never copies).
+    COMMUNITY_RESOURCES_ENABLED: bool = True
 
     # Log
     LOG_ROOT_LEVEL: str = 'NOTSET'

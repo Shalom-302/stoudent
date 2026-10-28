@@ -204,25 +204,52 @@ async def vote(request: Request, obj: VoteParam) -> ResponseModel:
     return response_base.success(request=request, data=data)
 
 
-@router.get(
-    '/resources', summary='Shared learning resources', dependencies=[Depends(_resources_open)]
-)
+Kind = Literal['sujet', 'corrige', 'cours', 'td', 'autre']
+
+
+@router.get('/resources/facets', summary='Library filters with counts', dependencies=[Depends(_resources_open)])
+async def resource_facets(
+    request: Request,
+    filiere: Text = None,
+    subject: Text = None,
+    kind: Kind | None = None,
+) -> ResponseModel:
+    data = await community_service.resource_facets(filiere=filiere, subject=subject, kind=kind)
+    return response_base.success(request=request, data=data)
+
+
+@router.get('/resources', summary='Library: sujets, corrigés, cours, TD', dependencies=[Depends(_resources_open)])
 async def list_resources(
     request: Request,
     filiere: Text = None,
     subject: Text = None,
+    kind: Kind | None = None,
+    year: Annotated[int | None, Query(ge=1990, le=2100)] = None,
     q: Annotated[str | None, Query(max_length=200)] = None,
+    sort: Literal['recent', 'popular', 'subject'] = 'recent',
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> ResponseModel:
-    data = await community_service.list_resources(filiere=filiere, subject=subject, q=q, page=page, size=size)
+    data = await community_service.list_resources(
+        filiere=filiere, subject=subject, kind=kind, year=year, q=q, sort=sort, page=page, size=size
+    )
     data['items'] = [ResourceDetail(**item) for item in data['items']]
     return response_base.success(request=request, data=data)
 
 
 @router.post(
+    '/resources/{x_id}/open',
+    summary='Count a visit to the original document',
+    dependencies=[Depends(_resources_open), Depends(RateLimiter(times=120, minutes=10))],
+)
+async def open_resource(request: Request, x_id: XIdPath) -> ResponseModel:
+    data = await community_service.open_resource(x_id=x_id)
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
     '/resources',
-    summary='Share a resource link',
+    summary='Suggest a link (listed once an admin approves it)',
     dependencies=[Depends(_resources_open), DependsJwtAuth, Depends(RateLimiter(times=10, hours=1))],
 )
 async def create_resource(request: Request, obj: CreateResourceParam) -> ResponseModel:

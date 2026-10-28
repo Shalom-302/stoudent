@@ -125,3 +125,53 @@ async def resolve(request: Request, target_type: TargetType, x_id: XIdPath, obj:
         for report in reports:
             report.status = 'dismissed' if obj.action == 'dismiss' else 'resolved'
     return response_base.success(request=request, data={'is_hidden': target.is_hidden})
+
+
+class ReviewResourceParam(SchemaBase):
+    action: Literal['approve', 'reject']
+
+
+@router.get(
+    '/resources/pending',
+    summary='Links suggested by members, waiting for review',
+    dependencies=[DependsJwtAuth, DependsAdmin],
+)
+async def pending_resources(request: Request) -> ResponseModel:
+    async with async_db_session() as db:
+        rows = (
+            await db.execute(
+                select(Resource).where(Resource.status == 'pending').order_by(Resource.id.asc()).limit(100)
+            )
+        ).unique().scalars().all()
+        items = [
+            {
+                'x_id': r.x_id,
+                'title': r.title,
+                'url': r.url,
+                'filiere': r.filiere,
+                'subject': r.subject,
+                'kind': r.kind,
+                'session_year': r.session_year,
+                'source': r.source,
+                'original_author': r.original_author,
+                'description': r.description,
+                'author': r.author.pseudo or r.author.email or r.author.phone,
+                'created_time': r.created_time,
+            }
+            for r in rows
+        ]
+    return response_base.success(request=request, data={'items': items})
+
+
+@router.post(
+    '/resources/{x_id}/review',
+    summary='Publish or reject a suggested link',
+    dependencies=[DependsJwtAuth, DependsAdmin],
+)
+async def review_resource(request: Request, x_id: XIdPath, obj: ReviewResourceParam) -> ResponseModel:
+    async with async_db_session.begin() as db:
+        resource = (await db.execute(select(Resource).where(Resource.x_id == x_id))).unique().scalars().first()
+        if resource is None:
+            raise errors.NotFoundError(msg='Ressource introuvable.')
+        resource.status = 'published' if obj.action == 'approve' else 'rejected'
+    return response_base.success(request=request, data={'status': resource.status})

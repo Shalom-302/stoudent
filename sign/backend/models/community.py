@@ -106,6 +106,15 @@ class Resource(Base):
     # Organisation or author the resource comes from.
     source: Mapped[str | None] = mapped_column(sa.String(200), default=None)
     description: Mapped[str | None] = mapped_column(sa.Text, default=None)
+    # 'sujet' (examen ou devoir), 'corrige', 'cours', 'td' (exercices), 'autre'.
+    kind: Mapped[str] = mapped_column(sa.String(20), default='autre', server_default='autre', index=True)
+    chapter: Mapped[str | None] = mapped_column(sa.String(150), default=None)
+    session_year: Mapped[int | None] = mapped_column(sa.SmallInteger, default=None, index=True)
+    # Who wrote the document, when known (the source being the site hosting it).
+    original_author: Mapped[str | None] = mapped_column(sa.String(150), default=None)
+    # Members' links wait for an admin; the imported catalogue is published.
+    status: Mapped[str] = mapped_column(sa.String(20), default='published', server_default='published', index=True)
+    open_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     is_hidden: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0', index=True)
 
     author: Mapped['User'] = relationship(init=False, lazy='joined')

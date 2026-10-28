@@ -495,8 +495,44 @@ export interface ResourceItem {
   subject: string | null;
   source: string | null;
   description: string | null;
+  kind: ResourceKind;
+  chapter: string | null;
+  session_year: number | null;
+  original_author: string | null;
+  open_count: number;
   created_time: string;
   author: CommunityAuthor;
+}
+
+export interface PendingResource {
+  x_id: string;
+  title: string;
+  url: string;
+  filiere: string;
+  subject: string | null;
+  kind: ResourceKind;
+  session_year: number | null;
+  source: string | null;
+  original_author: string | null;
+  description: string | null;
+  author: string;
+  created_time: string;
+}
+
+export type ResourceKind = 'sujet' | 'corrige' | 'cours' | 'td' | 'autre';
+
+export interface FacetCount<T = string> {
+  value: T;
+  count: number;
+}
+
+export interface ResourceFacets {
+  total: number;
+  filieres: FacetCount[];
+  subjects: FacetCount[];
+  kinds: FacetCount<ResourceKind>[];
+  years: FacetCount<number>[];
+  sources: FacetCount[];
 }
 
 export interface CommunityMeta {
@@ -506,7 +542,7 @@ export interface CommunityMeta {
   stats: { questions: number; answers: number; members: number };
 }
 
-export type ReportReason = 'spam' | 'offensive' | 'off_topic' | 'plagiarism' | 'broken_link' | 'other';
+export type ReportReason = 'spam' | 'offensive' | 'off_topic' | 'plagiarism' | 'copyright' | 'broken_link' | 'other';
 
 export interface ReportQueueItem {
   target_type: 'question' | 'answer' | 'resource';

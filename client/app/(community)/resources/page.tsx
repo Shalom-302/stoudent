@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-/** Resources are closed for now; see components/community/resources-view.tsx. */
+/** The resources became the library. */
 export default function ResourcesPage() {
-  redirect('/questions');
+  redirect('/bibliotheque');
 }
