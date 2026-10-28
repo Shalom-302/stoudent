@@ -1,0 +1,3066 @@
+{
+ "source": "Direction des Examens et Concours (DECO), bts.mesrs-ci.net",
+ "filieres": [
+  {
+   "code": "ATPA",
+   "name": "Agriculture tropicale option production animale",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Chimie Alimentaire",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Santé Animale",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Elevage en développement",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Génétique Animale",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Techniques d’Elevage Conventionnelle",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "ATPV",
+   "name": "Agriculture tropicale option production végétale",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Agronomie générale",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Chimie Alimentaire",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Irrigation",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Fertilisation",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Défense des Cultures",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Cultures Vivrières, Maraîchères et Industrielles",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Fruits et Agrumes",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Génétique et Sélection Végétale",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "AACV",
+   "name": "Arts et aménagement du cadre de vie",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Topographie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Construction Bâtiment VRD",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Résistance des Matériaux et Béton Armé (RDM-BA)",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Perspective",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Chromatologie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Dessin",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Agencement - Décoration",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "CV",
+   "name": "Communication visuelle",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Droit du Multimédia",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 7,
+     "shared_subjects": [
+      "Comptabilité",
+      "Informatique"
+     ]
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Technologie de la communication",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP : conception et création pdts multi média ou PAO",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "COS",
+   "name": "Cosmétologie",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Pharmacie Galénique",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Chimie",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Législation",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Normalisation",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": []
+    },
+    {
+     "name": "Microbiologie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "EPP Pharmacie Galénique",
+     "nature": "pratique",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Chimie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Microbiologie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "ELT",
+   "name": "Électrotechnique",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Physiques Appliquées",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Étude des Systèmes Electriques",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude des Systèmes Mécaniques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "GBAT",
+   "name": "Génie civil option bâtiment",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Géotechniques / Matériaux",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Topographie Appliquée",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Droit de la Construction",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "Résistance des Matériaux et Béton Armé (RDM-BA)",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": [
+      "Comptabilité",
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Technologie des Structures",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "GGT",
+   "name": "Génie civil option géomètre topographe",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Droit Foncier et de Cadastre",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Génie Civil",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Photogrammétrie",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "Géodésie",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Topométrie Générale",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Génie Rural",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": []
+    },
+    {
+     "name": "Calculs Topométriques",
+     "nature": "écrite",
+     "coefficient": 7,
+     "shared_subjects": []
+    },
+    {
+     "name": "Cartographie",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Épreuves Pratiques (Topométrie)",
+     "nature": "pratique",
+     "coefficient": 3,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "GTP",
+   "name": "Génie civil option travaux publics",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Géotechniques / Matériaux",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Topographie Appliquée",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "Résistance des Matériaux et Béton Armé (RDM-BA)",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Organisat et Gest Des Chantiers (OGC),Métré et Etude de Prix",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Environnement",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude de Cas (Routes et Transport)",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Aménagements Hydrauliques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "GEE",
+   "name": "Génie énergétique et environnement",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Physiques Appliquées",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Maintenance Industrielle et Environnement",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude des Systèmes Asservis",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Étude des Installations",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "GERN",
+   "name": "Gestion de l’environnement et des ressources naturelles",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Gestion des Déchets et Assainissement",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Règlementation sur l’Hygiène et la sécurité au Travail",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Hydraulique",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Installation Classée pour la Protection de l’Environ",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Informatique",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Sécurité -Signalisation-Circulation",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Traitement de la Pollution de l’Air, de l’Eau et de l’Environ.",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Normes et Systèmes de Management",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Diagnostic Environnemental",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Épreuve Pratique : Secourisme",
+     "nature": "pratique",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "HST",
+   "name": "Hygiène et sécurité du travail",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Environnement du Travail",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Règlementation sur l’Hygiène et la sécurité au Travail",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Gestion de la Santé et Sécurité au Travail",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Installation Classée pour la Protection de l’Environ",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Informatique",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Sécurité -Signalisation-Circulation",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Traitement de la Pollution de l’Air, de l’Eau et de l’Environ.",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Normes et Systèmes de Management",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Analyse des Postes de Travail",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Épreuve Pratique : Secourisme",
+     "nature": "pratique",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "IACC",
+   "name": "Industries agro-alimentaires et chimiques option contrôle",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Biochimie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Chimie",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Législation",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Normalisation",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": []
+    },
+    {
+     "name": "Microbiologie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "EPP Chimie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Microbiologie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Biochimie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "IACP",
+   "name": "Industries agro-alimentaires et chimiques option production",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Technologie Alimentaire",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Biochimie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Chimie",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Législation",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Normalisation",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": []
+    },
+    {
+     "name": "Microbiologie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Mécanique des Fluides",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Technologie Alimentaire",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Chimie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Biochimie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Microbiologie",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "IDA",
+   "name": "Informatique développeur d’applications",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 8,
+     "shared_subjects": [
+      "Comptabilité",
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Mathématiques Financières et Recherche Op.",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths financières et recherche opérationnelle"
+     ]
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "MSP",
+   "name": "Maintenance des systèmes de production",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Étude de Projet Mécanique",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Maintenance Industrielle",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude des Systèmes Electriques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Génie Electrique",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Mécanique RDM Thermodynamique",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Analyse et Technologie de Fabrication Mécanique",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "MGP",
+   "name": "Mines, géologie et pétrole",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Géochimie",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Géophysique",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Géologie Générale",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "Géologie Pétrolière",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Géologie Minière",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Législation Minière, Pétrolière et Droit Commercial",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "2MA",
+   "name": "Moteur et mécanique automobile",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Physiques Appliquée (physique-chimie-thermodyna.)",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Étude de cas : Diagnostic, Maintenance Auto. et M",
+     "nature": "écrite",
+     "coefficient": 7,
+     "shared_subjects": []
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "Analyse d’un Système Technique",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Droit de l’Automobile",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "ORGANISATION ET GESTION DE GARAGE",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 3,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "OPL",
+   "name": "Optique lunetterie",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Étude Technique des Systèmes Optiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Analyse de la Vision",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "Optique Géométrique et Physique",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Technologie Lunetière",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Épreuve pratique de Réalisation Technique et Contrôle d’Equipement (Fabrication)",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Épreuve pratique de Simulation en Milieu Professionnel",
+     "nature": "pratique",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Examen de la vue et Prise de Mesure",
+     "nature": "pratique",
+     "coefficient": 4,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "RIT",
+   "name": "Réseaux informatiques et télécommunications",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Traitement des Signaux et Mathématiques",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Télécommunication et Réseaux",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Électronique Analogique et Numérique",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "SIP",
+   "name": "Sécurité incendie et prévention",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Management et Organisation de la Sécurité",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Règlementation sur l’Hygiène et la sécurité au Travail",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Chimie, Hydraulique et Electricité Appliq. àSecu. Inc",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Prévention Incendie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Installation Classée pour la Protection de l’Environ",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Règlementation des Systèmes de Sécurité Incendie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Informatique",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Sécurité -Signalisation-Circulation",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Traitement de la Pollution de l’Air, de l’Eau et de l’Environ.",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Normes et Systèmes de Management",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Construction et Lecture de Plan",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Épreuve Pratique : Secourisme",
+     "nature": "pratique",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "SEI",
+   "name": "Systèmes électroniques et informatiques",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Physiques Appliquées",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Étude des systèmes Techniques",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP (Théorie du TP)",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Téléinformatique et Réseau",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Architecture des Systèmes Informatiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "EPP (Travaux Pratiques)",
+     "nature": "pratique",
+     "coefficient": 1,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "URBA",
+   "name": "Urbanisme",
+   "family": "industrielle",
+   "shelves": [
+    "FI",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Sciences Humaines Appliquées",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Gestion",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Gestion"
+     ]
+    },
+    {
+     "name": "Topographie Appliquée",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Droit de la Construction",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Entrepreneuriat",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Entrepreneuriat"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": [
+      "Comptabilité",
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Métré et Etude de Prix",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Environnement",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "EPP Techniq Graphiq et Maquette",
+     "nature": "pratique",
+     "coefficient": 3,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "AD",
+   "name": "Assistanat de direction",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": [
+      "Comptabilité",
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Techniques Quantitatives de Gestion",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths financières et recherche opérationnelle"
+     ]
+    },
+    {
+     "name": "EPP Applications Bureautiques et Informatiques",
+     "nature": "pratique",
+     "coefficient": 5,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "CJPI",
+   "name": "Carrières juridiques et professions immobilières",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Droit (QCM juridique, immobilier et urbanisme)",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": []
+    },
+    {
+     "name": "Technique du Bâtiment",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Comptabilité",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Comptabilité"
+     ]
+    },
+    {
+     "name": "Fiscalité",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "FA",
+   "name": "Finances assurances",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Informatique",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Droit et Contentieux Bancaire",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques Financières et Statistiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Maths financières et recherche opérationnelle",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Comptabilité",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Comptabilité"
+     ]
+    },
+    {
+     "name": "Contrat d’assurance",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Marketing et Etude de Projets",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "FCGE",
+   "name": "Finances comptabilité et gestion des entreprises",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Informatique",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Mathématiques Financières et Recherche Op.",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths financières et recherche opérationnelle"
+     ]
+    },
+    {
+     "name": "Marketing",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Mathématiques",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths : statistiques et probabilités",
+      "Mathématiques"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 7,
+     "shared_subjects": [
+      "Comptabilité"
+     ]
+    },
+    {
+     "name": "Gestion financière",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Fiscalité",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "GEC",
+   "name": "Gestion commerciale",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Technique du Commerce International",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Management de la Force de Vente",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Comptabilité",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Comptabilité"
+     ]
+    },
+    {
+     "name": "Fondements, Concepts Marketing et Etude de Marché",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "GCT",
+   "name": "Gestion des collectivités territoriales",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Droit Civil, Droit du Travail et Droit Public",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Moyens d’Action Locale",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Communication et GRH",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude de Cas (Aménagement du Territoire)",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Comptabilité",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Comptabilité"
+     ]
+    },
+    {
+     "name": "Droit de l’Espace et de la Nature",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "LOG",
+   "name": "Logistique",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Informatique",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Transit-Douanes, Règlement des Transactions Inter et Fact",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Recherche Opérationnelle",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Maths financières et recherche opérationnelle"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": []
+    },
+    {
+     "name": "Comptabilité",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Comptabilité"
+     ]
+    },
+    {
+     "name": "Économie des Transports",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Management des transports et gestion des Moy.Géne",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Management des Approvisionnements des Stocks…",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    }
+   ]
+  },
+  {
+   "code": "RHC",
+   "name": "Ressources humaines et communication",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Législation du Travail et de la Communication",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Psychologie Appliquée",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Psychologie appliquée"
+     ]
+    },
+    {
+     "name": "Enquête de Satisfaction",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Développement des Ressources Humaines",
+     "nature": "écrite",
+     "coefficient": 5,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": [
+      "Comptabilité",
+      "Informatique"
+     ]
+    }
+   ]
+  },
+  {
+   "code": "SIN",
+   "name": "Sciences de l’information",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Droit d’Auteur et Droit du Patrimoine",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": [
+      "Comptabilité",
+      "Informatique"
+     ]
+    }
+   ]
+  },
+  {
+   "code": "TH",
+   "name": "Tourisme hôtellerie",
+   "family": "tertiaire",
+   "shelves": [
+    "FT",
+    "Tronc commun"
+   ],
+   "epreuves": [
+    {
+     "name": "Techniques d’Expression Française",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Techniques d’expression française"
+     ]
+    },
+    {
+     "name": "Anglais",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": [
+      "Anglais"
+     ]
+    },
+    {
+     "name": "Économie",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Économie générale"
+     ]
+    },
+    {
+     "name": "Droit des Affaires et Droit du Travail",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": [
+      "Droit"
+     ]
+    },
+    {
+     "name": "Mercatique Touristique et Hôtelière",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": []
+    },
+    {
+     "name": "Histoire des Civilisations",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": []
+    },
+    {
+     "name": "Histoire de l’Art",
+     "nature": "écrite",
+     "coefficient": 1,
+     "shared_subjects": []
+    },
+    {
+     "name": "Étude de Cas",
+     "nature": "écrite",
+     "coefficient": 6,
+     "shared_subjects": [
+      "Informatique"
+     ]
+    },
+    {
+     "name": "Accueil, Animation, Guidage",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Comptabilité et Gestion Hôtelière",
+     "nature": "écrite",
+     "coefficient": 4,
+     "shared_subjects": [
+      "Comptabilité"
+     ]
+    },
+    {
+     "name": "Allemand ou Espagnol (LV 2)",
+     "nature": "écrite",
+     "coefficient": 3,
+     "shared_subjects": [
+      "Espagnol"
+     ]
+    },
+    {
+     "name": "Géographie Touristique et Environnement",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Tarification Aérienne et Billetterie",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    },
+    {
+     "name": "Environnement Economique et Juridique du Tourisme",
+     "nature": "écrite",
+     "coefficient": 2,
+     "shared_subjects": []
+    }
+   ]
+  }
+ ]
+}

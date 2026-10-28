@@ -155,7 +155,7 @@ DEMO_ACCOUNTS: list[dict] = [
     {
         'pseudo': 'marie.fc',
         'phone': '2250000000106',
-        'filiere': 'FC',
+        'filiere': 'FCGE',
         'level': 'BTS 2',
         'questions': [
             {

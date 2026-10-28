@@ -6,6 +6,7 @@ import * as React from 'react';
 
 import { ModerationQueue } from '@/components/admin/moderation-queue';
 import { PendingResources } from '@/components/admin/pending-resources';
+import { WhatsAppBroadcast } from '@/components/admin/whatsapp-broadcast';
 import { StudentTable } from '@/components/admin/student-table';
 import { StatCard } from '@/components/student/level-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +69,7 @@ export default function SignManagerPage() {
         <TabsList>
           <TabsTrigger value="students">Membres</TabsTrigger>
           <TabsTrigger value="moderation">Modération</TabsTrigger>
+          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
           <TabsTrigger value="experiments">Expériences</TabsTrigger>
         </TabsList>
 
@@ -78,6 +80,10 @@ export default function SignManagerPage() {
         <TabsContent value="moderation">
           <ModerationQueue />
           <PendingResources />
+        </TabsContent>
+
+        <TabsContent value="whatsapp">
+          <WhatsAppBroadcast />
         </TabsContent>
 
         <TabsContent value="experiments">

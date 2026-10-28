@@ -2,7 +2,10 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
+  ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
+  ChevronRight,
   BookOpen,
   FileCheck2,
   FileText,
@@ -24,10 +27,12 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BTS_FILIERES, FILIERE_GROUPS, PRIVACY_CONTACT, RESOURCE_KINDS, TRONC_COMMUN, kindLabel } from '@/lib/community';
+import { useAuth } from '@/features/auth/auth-provider';
+import { BTS_FILIERES, FILIERE_GROUPS, LEGACY_FILIERES, PRIVACY_CONTACT, RESOURCE_KINDS, TRONC_COMMUN, kindLabel } from '@/lib/community';
 import { cn } from '@/lib/utils';
 import { communityService, type ResourcePayload, type ResourceSort } from '@/services/community';
-import type { ResourceItem, ResourceKind } from '@/types';
+import { studentService } from '@/services/student';
+import type { KindCounts, ResourceItem, ResourceKind } from '@/types';
 
 const SORTS: { value: ResourceSort; label: string }[] = [
   { value: 'recent', label: 'Sessions récentes' },
@@ -43,15 +48,11 @@ const KIND_ICONS: Record<ResourceKind, React.ComponentType<{ className?: string 
   autre: Files,
 };
 
-function filiereName(code: string): string | undefined {
-  if (FILIERE_GROUPS[code]) return FILIERE_GROUPS[code];
-  return BTS_FILIERES.find((f) => f.code === code)?.name;
-}
-
 /**
- * The BTS library: sujets d'examen, corrigés, cours and TD, sorted by filière,
- * matière and session. Each entry links to the site that hosts the document,
- * credited by name; STOUDENT never keeps a copy.
+ * The BTS library, organised on the official programme (DECO / MESRS):
+ * filière -> épreuves with their coefficients -> the sujets, corrigés, cours
+ * and TD that prepare each one. Every entry links to the site that hosts the
+ * document, credited by name; STOUDENT never keeps a copy.
  */
 export function LibraryView() {
   const router = useRouter();
@@ -59,46 +60,36 @@ export function LibraryView() {
   const params = useSearchParams();
 
   const filters = {
-    filiere: params.get('filiere') ?? undefined,
-    subject: params.get('subject') ?? undefined,
+    filiere: normalizeFiliere(params.get('filiere')),
+    epreuve: params.get('epreuve') ?? undefined,
+    other: params.get('other') === '1',
     kind: (params.get('kind') as ResourceKind | null) ?? undefined,
-    year: Number(params.get('year')) || undefined,
     q: params.get('q') ?? undefined,
     sort: (params.get('sort') as ResourceSort | null) ?? 'recent',
     page: Number(params.get('page') ?? 1) || 1,
   };
   const [search, setSearch] = React.useState(filters.q ?? '');
-  const [suggesting, setSuggesting] = React.useState(false);
 
-  // Filters live in the URL so a filtered shelf can be shared on WhatsApp.
-  const setParam = (changes: Record<string, string | undefined>) => {
-    const next = new URLSearchParams(params.toString());
+  // Filters live in the URL so a shelf can be shared on WhatsApp.
+  const go = (changes: Record<string, string | undefined>, reset = false) => {
+    const next = new URLSearchParams(reset ? '' : params.toString());
     for (const [key, value] of Object.entries(changes)) {
       if (value) next.set(key, value);
       else next.delete(key);
     }
     if (!('page' in changes)) next.delete('page');
-    router.push(`${pathname}?${next.toString()}`, { scroll: false });
+    const qs = next.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const facets = useQuery({
-    queryKey: ['community', 'library-facets', filters.filiere, filters.subject, filters.kind],
-    queryFn: () =>
-      communityService.resourceFacets({ filiere: filters.filiere, subject: filters.subject, kind: filters.kind }),
-    staleTime: 60_000,
-    placeholderData: (previous) => previous,
-  });
-  const list = useQuery({
-    queryKey: ['community', 'library', filters],
-    queryFn: () => communityService.resources(filters),
-    placeholderData: (previous) => previous,
+    queryKey: ['community', 'library-facets'],
+    queryFn: () => communityService.resourceFacets({}),
+    staleTime: 5 * 60_000,
   });
 
-  const kindCount = (kind?: string) =>
-    kind
-      ? (facets.data?.kinds.find((k) => k.value === kind)?.count ?? 0)
-      : (facets.data?.kinds.reduce((sum, k) => sum + k.count, 0) ?? 0);
-  const filtered = Boolean(filters.filiere || filters.subject || filters.kind || filters.year || filters.q);
+  const searching = Boolean(filters.q);
+  const shelf = filters.filiere && (filters.epreuve || filters.other);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
@@ -110,17 +101,17 @@ export function LibraryView() {
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">Bibliothèque BTS</p>
           <h1 className="mt-2 max-w-2xl font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            Sujets, corrigés, cours et TD, rangés par filière et matière.
+            Le programme officiel de ta filière, épreuve par épreuve.
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-white/70">
-            {facets.data ? `${facets.data.total} documents` : '…'} repérés pour toi sur les sites qui les publient. Tu
-            les ouvres chez leur auteur, la source est toujours citée.
+            Les épreuves et coefficients du MESRS, et pour chacune les sujets, corrigés, cours et TD qui la
+            préparent. {facets.data ? `${facets.data.total} documents, ` : ''}source et auteur toujours cités.
           </p>
           <form
             className="mt-6 flex max-w-2xl gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              setParam({ q: search.trim() || undefined });
+              go({ q: search.trim() || undefined, epreuve: undefined, other: undefined, kind: undefined });
             }}
           >
             <div className="relative flex-1">
@@ -128,7 +119,7 @@ export function LibraryView() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Ex. : maths 2024, comptabilité, réseaux téléphoniques…"
+                placeholder="Ex. : maths 2024, fiscalité, réseaux d’accès…"
                 className="h-12 border-0 pl-9 text-ink-900"
                 aria-label="Rechercher un document"
               />
@@ -140,243 +131,447 @@ export function LibraryView() {
         </div>
       </header>
 
-      {/* Filières */}
-      <nav aria-label="Filière" className="-mx-4 mt-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
-          <li>
-            <FilterPill
-              active={!filters.filiere}
-              onClick={() => setParam({ filiere: undefined, subject: undefined })}
-              label="Toutes"
-              count={facets.data?.total}
-            />
-          </li>
-          {facets.data?.filieres.map((f) => (
-            <li key={f.value}>
-              <FilterPill
-                active={filters.filiere === f.value}
-                onClick={() =>
-                  setParam({ filiere: filters.filiere === f.value ? undefined : f.value, subject: undefined })
-                }
-                label={f.value}
-                title={filiereName(f.value)}
-                count={f.count}
-              />
+      {searching ? (
+        <SearchResults
+          filters={filters}
+          onClear={() => {
+            setSearch('');
+            go({ q: undefined });
+          }}
+          go={go}
+        />
+      ) : shelf ? (
+        <EpreuveShelf filters={filters} go={go} />
+      ) : filters.filiere ? (
+        <FiliereProgramme code={filters.filiere} go={go} />
+      ) : (
+        <FilierePicker go={go} />
+      )}
+
+      <div className="mt-10 grid gap-4 md:grid-cols-[1fr_320px]">
+        <SuggestBlock defaults={{ filiere: filters.filiere, subject: filters.epreuve, kind: filters.kind }} />
+        <CopyrightNote sources={facets.data?.sources ?? []} />
+      </div>
+    </div>
+  );
+}
+
+type Go = (changes: Record<string, string | undefined>, reset?: boolean) => void;
+
+function normalizeFiliere(code: string | null): string | undefined {
+  if (!code) return undefined;
+  return LEGACY_FILIERES[code.toUpperCase()] ?? code;
+}
+
+/** Step 1: the 33 filières, the member's own first. */
+function FilierePicker({ go }: { go: Go }) {
+  const { user } = useAuth();
+  const me = useQuery({ queryKey: ['student'], queryFn: studentService.me, enabled: Boolean(user) });
+  const overview = useQuery({ queryKey: ['community', 'programme'], queryFn: communityService.programme, staleTime: 5 * 60_000 });
+  const mine = normalizeFiliere(me.data?.filiere ?? null);
+  const own = overview.data?.filieres.find((f) => f.code === mine);
+
+  return (
+    <section className="mt-8">
+      {own && (
+        <button
+          onClick={() => go({ filiere: own.code }, true)}
+          className="group mb-8 flex w-full items-center justify-between gap-4 rounded-2xl border border-ink-900 p-5 text-left transition hover:bg-ink-50"
+        >
+          <span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-ink-400">Ta filière</span>
+            <span className="mt-1 block font-display text-xl font-semibold">
+              {own.code} · {own.name}
+            </span>
+            <span className="mt-1 block text-sm text-ink-500">
+              {own.epreuves_covered}/{own.epreuves} épreuves avec des documents · {own.documents} documents
+            </span>
+          </span>
+          <ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-1" />
+        </button>
+      )}
+
+      {(['industrielle', 'tertiaire'] as const).map((family) => (
+        <div key={family} className="mb-8">
+          <h2 className="font-display text-xl font-semibold">
+            {family === 'industrielle' ? 'Filières industrielles' : 'Filières tertiaires'}
+          </h2>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {overview.isLoading &&
+              Array.from({ length: 6 }).map((_, i) => (
+                <li key={i}>
+                  <Skeleton className="h-20 w-full rounded-2xl" />
+                </li>
+              ))}
+            {overview.data?.filieres
+              .filter((f) => f.family === family)
+              .map((f) => (
+                <li key={f.code}>
+                  <button
+                    onClick={() => go({ filiere: f.code }, true)}
+                    className="flex h-full w-full flex-col rounded-2xl border border-ink-200 p-4 text-left transition hover:border-ink-900"
+                  >
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="font-display text-lg font-semibold">{f.code}</span>
+                      <span className="font-mono text-[11px] text-ink-400">
+                        {f.documents ? `${f.documents} docs` : 'à compléter'}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 text-sm text-ink-500">{f.name}</span>
+                    <CoverageBar covered={f.epreuves_covered} total={f.epreuves} />
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
+      {overview.data && <p className="text-xs text-ink-400">Épreuves et coefficients : {overview.data.source}.</p>}
+    </section>
+  );
+}
+
+function CoverageBar({ covered, total }: { covered: number; total: number }) {
+  return (
+    <span className="mt-3 flex items-center gap-2 text-[11px] text-ink-400" title="Épreuves qui ont au moins un document">
+      <span className="h-1 flex-1 overflow-hidden rounded-full bg-ink-100">
+        <span className="block h-full bg-ink-900" style={{ width: `${total ? (covered / total) * 100 : 0}%` }} />
+      </span>
+      {covered}/{total} épreuves
+    </span>
+  );
+}
+
+/** Step 2: the filière's official épreuves, each with what prepares it. */
+function FiliereProgramme({ code, go }: { code: string; go: Go }) {
+  const data = useQuery({
+    queryKey: ['community', 'programme', code],
+    queryFn: () => communityService.programmeFiliere(code),
+    retry: false,
+  });
+
+  if (data.isError) {
+    return (
+      <section className="mt-8 rounded-2xl border border-dashed border-ink-300 p-8 text-center">
+        <p className="font-display text-lg font-semibold">Filière « {code} » introuvable dans le programme officiel.</p>
+        <Button className="mt-4" variant="outline" onClick={() => go({}, true)}>
+          Voir les 33 filières
+        </Button>
+      </section>
+    );
+  }
+  const f = data.data;
+
+  return (
+    <section className="mt-8">
+      <Breadcrumb go={go} items={[{ label: f ? f.code : code }]} />
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+            {f ? `${f.code} · ${f.name}` : <Skeleton className="h-8 w-80" />}
+          </h2>
+          {f && (
+            <p className="mt-1 text-sm text-ink-500">
+              {f.epreuves.length} épreuves officielles · total des coefficients {f.coefficients} · filière{' '}
+              {f.family}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <ul className="mt-6 grid gap-3 md:grid-cols-2">
+        {data.isLoading &&
+          Array.from({ length: 6 }).map((_, i) => (
+            <li key={i}>
+              <Skeleton className="h-28 w-full rounded-2xl" />
             </li>
           ))}
-        </ul>
-      </nav>
-      {filters.filiere && filiereName(filters.filiere) && (
-        <p className="mt-2 text-sm text-ink-500">{filiereName(filters.filiere)}</p>
-      )}
-
-      {/* Types */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap rounded-xl border border-ink-200 p-0.5" role="tablist" aria-label="Type">
-          {[{ value: undefined, plural: 'Tout' }, ...RESOURCE_KINDS].map((k) => {
-            const count = kindCount(k.value);
-            if (k.value && !count && filters.kind !== k.value) return null;
-            return (
-              <button
-                key={k.value ?? 'all'}
-                role="tab"
-                aria-selected={filters.kind === k.value}
-                onClick={() => setParam({ kind: k.value })}
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium',
-                  filters.kind === k.value ? 'bg-ink-900 text-white' : 'text-ink-600 hover:text-ink-900',
+        {f?.epreuves.map((e) => (
+          <li key={e.name}>
+            <button
+              onClick={() => go({ epreuve: e.name, kind: undefined, other: undefined })}
+              className={cn(
+                'flex h-full w-full flex-col rounded-2xl border p-5 text-left transition',
+                e.total ? 'border-ink-200 hover:border-ink-900' : 'border-dashed border-ink-200 hover:border-ink-400',
+              )}
+            >
+              <span className="flex items-start justify-between gap-3">
+                <span className="font-display text-lg font-semibold leading-snug">{e.name}</span>
+                <span
+                  className="shrink-0 rounded-lg bg-ink-900 px-2 py-1 text-center font-mono text-xs font-semibold text-white"
+                  title="Coefficient à l’examen"
+                >
+                  coef {e.coefficient}
+                </span>
+              </span>
+              <span className="mt-1 text-xs text-ink-400">
+                Épreuve {e.nature}
+                {f.coefficients > 0 && <> · {Math.round((e.coefficient / f.coefficients) * 100)} % de la note</>}
+              </span>
+              <span className="mt-auto pt-4">
+                {e.total ? (
+                  <KindChips kinds={e.kinds} />
+                ) : (
+                  <span className="text-xs text-ink-400">Pas encore de document. Tu en connais un ? Propose-le.</span>
                 )}
-              >
-                {k.plural} <span className="opacity-60">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-        <select
-          aria-label="Tri"
-          value={filters.sort}
-          onChange={(e) => setParam({ sort: e.target.value === 'recent' ? undefined : e.target.value })}
-          className="h-9 rounded-lg border border-ink-200 bg-white px-2 text-sm"
-        >
-          {SORTS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-        {filtered && (
-          <button
-            className="text-xs text-ink-500 underline underline-offset-4 hover:text-ink-900"
-            onClick={() => {
-              setSearch('');
-              router.push(pathname, { scroll: false });
-            }}
-          >
-            Effacer les filtres
-          </button>
+              </span>
+            </button>
+          </li>
+        ))}
+        {f && f.other.total > 0 && (
+          <li className="md:col-span-2">
+            <button
+              onClick={() => go({ other: '1', epreuve: undefined, kind: undefined })}
+              className="flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-200 bg-ink-50 p-5 text-left transition hover:border-ink-900"
+            >
+              <span>
+                <span className="font-display text-lg font-semibold">Autres documents de la filière</span>
+                <span className="mt-0.5 block text-xs text-ink-500">
+                  Anciens sujets, cours complémentaires… qui ne se rattachent pas à une épreuve précise.
+                </span>
+              </span>
+              <KindChips kinds={f.other.kinds} />
+            </button>
+          </li>
+        )}
+      </ul>
+      {f && <p className="mt-4 text-xs text-ink-400">Épreuves et coefficients : {f.source}.</p>}
+    </section>
+  );
+}
+
+function KindChips({ kinds }: { kinds: KindCounts }) {
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {RESOURCE_KINDS.filter((k) => kinds[k.value]).map((k) => (
+        <span key={k.value} className="rounded-md bg-accent-100 px-2 py-0.5 text-[11px] text-ink-700">
+          <b className="font-semibold text-ink-900">{kinds[k.value]}</b> {k.plural.toLowerCase()}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function Breadcrumb({ go, items }: { go: Go; items: { label: string; onClick?: () => void }[] }) {
+  return (
+    <nav aria-label="Fil d’Ariane" className="flex flex-wrap items-center gap-1 text-sm text-ink-500">
+      <button onClick={() => go({}, true)} className="inline-flex items-center gap-1 hover:text-ink-900">
+        <ArrowLeft className="h-3.5 w-3.5" /> Filières
+      </button>
+      {items.map((item, i) => (
+        <React.Fragment key={i}>
+          <ChevronRight className="h-3.5 w-3.5 text-ink-300" />
+          {item.onClick ? (
+            <button onClick={item.onClick} className="hover:text-ink-900">
+              {item.label}
+            </button>
+          ) : (
+            <span className="font-medium text-ink-900">{item.label}</span>
+          )}
+        </React.Fragment>
+      ))}
+    </nav>
+  );
+}
+
+interface Filters {
+  filiere?: string;
+  epreuve?: string;
+  other: boolean;
+  kind?: ResourceKind;
+  q?: string;
+  sort: ResourceSort;
+  page: number;
+}
+
+/** Step 3: the documents of one épreuve (or the filière's other documents). */
+function EpreuveShelf({ filters, go }: { filters: Filters; go: Go }) {
+  const programmeQuery = useQuery({
+    queryKey: ['community', 'programme', filters.filiere],
+    queryFn: () => communityService.programmeFiliere(filters.filiere!),
+  });
+  const f = programmeQuery.data;
+  const e = f?.epreuves.find((x) => x.name === filters.epreuve);
+  const kinds = filters.other ? f?.other.kinds : e?.kinds;
+  const title = filters.other ? 'Autres documents' : (filters.epreuve ?? '');
+
+  return (
+    <section className="mt-8">
+      <Breadcrumb
+        go={go}
+        items={[
+          { label: filters.filiere!, onClick: () => go({ filiere: filters.filiere }, true) },
+          { label: title },
+        ]}
+      />
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
+        {e && (
+          <p className="text-sm text-ink-500">
+            Épreuve {e.nature} · <b className="text-ink-900">coef {e.coefficient}</b>
+          </p>
         )}
       </div>
-
-      <div className="mt-6 grid gap-8 lg:grid-cols-[240px_1fr]">
-        <aside className="min-w-0 space-y-6 lg:sticky lg:top-24 lg:self-start">
-          <FacetBlock title="Matières">
-            {facets.isLoading && <Skeleton className="h-24 w-full" />}
-            {facets.data?.subjects.length === 0 && <p className="text-xs text-ink-400">Aucune matière.</p>}
-            <ul className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 lg:max-h-[50vh] lg:flex-col lg:flex-nowrap lg:gap-0.5 lg:overflow-y-auto">
-              {facets.data?.subjects.map((s) => (
-                <li key={s.value}>
-                  <button
-                    onClick={() => setParam({ subject: filters.subject === s.value ? undefined : s.value })}
-                    className={cn(
-                      'flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-full border px-2.5 py-1 text-left text-xs lg:rounded-lg lg:border-0 lg:px-2 lg:py-1.5 lg:text-sm',
-                      filters.subject === s.value
-                        ? 'border-ink-900 bg-ink-900 text-white'
-                        : 'border-ink-200 text-ink-700 hover:bg-ink-50 hover:text-ink-900',
-                    )}
-                  >
-                    <span className="truncate">{s.value}</span>
-                    <span className="font-mono text-[11px] opacity-60">{s.count}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </FacetBlock>
-
-          {facets.data && facets.data.years.length > 0 && (
-            <FacetBlock title="Session">
-              <div className="flex flex-wrap gap-1.5">
-                {facets.data.years.map((y) => (
-                  <button
-                    key={y.value}
-                    onClick={() => setParam({ year: filters.year === y.value ? undefined : String(y.value) })}
-                    className={cn(
-                      'rounded-full border px-2.5 py-1 font-mono text-xs',
-                      filters.year === y.value
-                        ? 'border-ink-900 bg-ink-900 text-white'
-                        : 'border-ink-200 text-ink-700 hover:border-ink-900',
-                    )}
-                  >
-                    {y.value} <span className="opacity-60">{y.count}</span>
-                  </button>
-                ))}
-              </div>
-            </FacetBlock>
-          )}
-
-          <CopyrightNote sources={facets.data?.sources ?? []} />
-        </aside>
-
-        <section className="min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-ink-500">
-              {list.data ? `${list.data.total} document${list.data.total > 1 ? 's' : ''}` : '…'}
-              {filters.subject && <> · {filters.subject}</>}
-              {filters.year && <> · session {filters.year}</>}
-              {filters.q && <> · « {filters.q} »</>}
-            </p>
-            <SuggestButton open={suggesting} onToggle={() => setSuggesting((v) => !v)} />
-          </div>
-
-          {suggesting && <SuggestForm defaults={filters} onDone={() => setSuggesting(false)} />}
-
-          <ul
-            className={cn(
-              'mt-4 divide-y divide-ink-100 rounded-2xl border border-ink-200 transition-opacity',
-              list.isFetching && list.isPlaceholderData && 'opacity-60',
-            )}
-          >
-            {list.isLoading &&
-              Array.from({ length: 6 }).map((_, i) => (
-                <li key={i} className="flex gap-4 p-5">
-                  <Skeleton className="h-11 w-11 rounded-xl" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="mt-2 h-5 w-2/3" />
-                  </div>
-                </li>
-              ))}
-            {list.isError && <li className="p-5 text-sm text-red-700">{(list.error as Error).message}</li>}
-            {list.data?.items.length === 0 && (
-              <li className="p-10 text-center">
-                <p className="font-display text-lg font-semibold">Rien ici pour l’instant.</p>
-                <p className="mt-1 text-sm text-ink-500">
-                  Essaie une autre matière, ou propose un document que tu connais.
-                </p>
-              </li>
-            )}
-            {list.data?.items.map((r) => (
-              <DocumentRow key={r.x_id} doc={r} onSubject={(subject) => setParam({ subject })} />
-            ))}
-          </ul>
-
-          {list.data && list.data.total_pages > 1 && (
-            <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Pagination">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={filters.page <= 1}
-                onClick={() => setParam({ page: String(filters.page - 1) })}
-              >
-                Précédent
-              </Button>
-              <span className="text-sm text-ink-500">
-                {filters.page} / {list.data.total_pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={filters.page >= list.data.total_pages}
-                onClick={() => setParam({ page: String(filters.page + 1) })}
-              >
-                Suivant
-              </Button>
-            </nav>
-          )}
-        </section>
-      </div>
-    </div>
+      {kinds && <KindTabs kinds={kinds} active={filters.kind} onPick={(kind) => go({ kind })} sort={filters.sort} go={go} />}
+      <DocumentList filters={filters} go={go} emptyHint="Aucun document pour cette épreuve pour l’instant." />
+    </section>
   );
 }
 
-function FilterPill({
+function KindTabs({
+  kinds,
   active,
-  onClick,
-  label,
-  count,
-  title,
+  onPick,
+  sort,
+  go,
 }: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count?: number;
-  title?: string;
+  kinds: KindCounts;
+  active?: ResourceKind;
+  onPick: (kind?: string) => void;
+  sort: ResourceSort;
+  go: Go;
 }) {
+  const total = Object.values(kinds).reduce((a, b) => a + (b ?? 0), 0);
   return (
-    <button
-      onClick={onClick}
-      title={title}
-      aria-pressed={active}
-      className={cn(
-        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors',
-        active ? 'border-ink-900 bg-ink-900 text-white' : 'border-ink-200 bg-white text-ink-700 hover:border-ink-900',
-      )}
-    >
-      {label}
-      {count !== undefined && <span className="font-mono text-[11px] opacity-60">{count}</span>}
-    </button>
-  );
-}
-
-function FacetBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-400">{title}</p>
-      {children}
+    <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap rounded-xl border border-ink-200 p-0.5" role="tablist" aria-label="Type">
+        {[{ value: undefined, plural: 'Tout' }, ...RESOURCE_KINDS].map((k) => {
+          const count = k.value ? (kinds[k.value] ?? 0) : total;
+          if (k.value && !count) return null;
+          return (
+            <button
+              key={k.value ?? 'all'}
+              role="tab"
+              aria-selected={active === k.value}
+              onClick={() => onPick(k.value)}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-medium',
+                active === k.value ? 'bg-ink-900 text-white' : 'text-ink-600 hover:text-ink-900',
+              )}
+            >
+              {k.plural} <span className="opacity-60">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+      <select
+        aria-label="Tri"
+        value={sort}
+        onChange={(e) => go({ sort: e.target.value === 'recent' ? undefined : e.target.value })}
+        className="h-9 rounded-lg border border-ink-200 bg-white px-2 text-sm"
+      >
+        {SORTS.map((s) => (
+          <option key={s.value} value={s.value}>
+            {s.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
 
-function DocumentRow({ doc, onSubject }: { doc: ResourceItem; onSubject: (subject: string) => void }) {
+function SearchResults({ filters, onClear, go }: { filters: Filters; onClear: () => void; go: Go }) {
+  return (
+    <section className="mt-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="font-display text-2xl font-semibold tracking-tight">« {filters.q} »</h2>
+        <button className="text-xs text-ink-500 underline underline-offset-4 hover:text-ink-900" onClick={onClear}>
+          Revenir au programme
+        </button>
+      </div>
+      <DocumentList filters={filters} go={go} emptyHint="Aucun document ne correspond. Essaie un autre mot." />
+    </section>
+  );
+}
+
+function DocumentList({ filters, go, emptyHint }: { filters: Filters; go: Go; emptyHint: string }) {
+  const list = useQuery({
+    queryKey: ['community', 'library', filters],
+    queryFn: () =>
+      communityService.resources({
+        filiere: filters.filiere,
+        epreuve: filters.epreuve,
+        other: filters.other || undefined,
+        kind: filters.kind,
+        q: filters.q,
+        sort: filters.sort,
+        page: filters.page,
+      }),
+    placeholderData: (previous) => previous,
+  });
+
+  return (
+    <>
+      <ul
+        className={cn(
+          'mt-4 divide-y divide-ink-100 rounded-2xl border border-ink-200 transition-opacity',
+          list.isFetching && list.isPlaceholderData && 'opacity-60',
+        )}
+      >
+        {list.isLoading &&
+          Array.from({ length: 5 }).map((_, i) => (
+            <li key={i} className="flex gap-4 p-5">
+              <Skeleton className="h-11 w-11 rounded-xl" />
+              <div className="flex-1">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="mt-2 h-5 w-2/3" />
+              </div>
+            </li>
+          ))}
+        {list.isError && <li className="p-5 text-sm text-red-700">{(list.error as Error).message}</li>}
+        {list.data?.items.length === 0 && (
+          <li className="p-10 text-center">
+            <p className="font-display text-lg font-semibold">{emptyHint}</p>
+            <p className="mt-1 text-sm text-ink-500">Tu connais un bon document ? Propose-le plus bas.</p>
+          </li>
+        )}
+        {list.data?.items.map((r) => (
+          <DocumentRow key={r.x_id} doc={r} />
+        ))}
+      </ul>
+      {list.data && list.data.total_pages > 1 && (
+        <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Pagination">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={filters.page <= 1}
+            onClick={() => go({ page: String(filters.page - 1) })}
+          >
+            Précédent
+          </Button>
+          <span className="text-sm text-ink-500">
+            {filters.page} / {list.data.total_pages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={filters.page >= list.data.total_pages}
+            onClick={() => go({ page: String(filters.page + 1) })}
+          >
+            Suivant
+          </Button>
+        </nav>
+      )}
+    </>
+  );
+}
+
+function SuggestBlock({ defaults }: { defaults: { filiere?: string; subject?: string; kind?: ResourceKind } }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="rounded-2xl border border-ink-200 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-display text-lg font-semibold">Il manque un document ?</p>
+          <p className="text-sm text-ink-500">Propose le lien d’un sujet, d’un cours ou d’un TD public.</p>
+        </div>
+        <SuggestButton open={open} onToggle={() => setOpen((v) => !v)} />
+      </div>
+      {open && <SuggestForm defaults={defaults} onDone={() => setOpen(false)} />}
+    </div>
+  );
+}
+
+function DocumentRow({ doc }: { doc: ResourceItem }) {
   const Icon = KIND_ICONS[doc.kind] ?? Files;
   const [opens, setOpens] = React.useState(doc.open_count);
   const open = useMutation({
@@ -417,11 +612,7 @@ function DocumentRow({ doc, onSubject }: { doc: ResourceItem; onSubject: (subjec
             {doc.title}
           </a>
           <p className="mt-0.5 text-sm text-ink-500">
-            {doc.subject && (
-              <button onClick={() => onSubject(doc.subject!)} className="hover:text-ink-900 hover:underline">
-                {doc.subject}
-              </button>
-            )}
+            {doc.subject}
             {doc.chapter && <> · {doc.chapter}</>}
           </p>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-xs text-ink-400">

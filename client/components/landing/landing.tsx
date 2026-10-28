@@ -61,7 +61,7 @@ const DEMOS = [
     ],
   },
   {
-    filiere: 'FC',
+    filiere: 'FCGE',
     tags: ['tva', 'facturation'],
     title: 'Comment retrouver la TVA d’une facture de 590 000 F TTC ?',
     author: 'marie.fc · BTS 2',
@@ -283,7 +283,7 @@ export function Landing() {
               ))}
             </h1>
             <p className="hero-fade mt-6 max-w-xl text-lg text-ink-500">
-              RIT, IDA, ELT, SEI, MSP, Finance Comptabilité… STOUDENT réunit étudiants et
+              RIT, IDA, ELT, SEI, MSP, FCGE… STOUDENT réunit étudiants et
               professeurs de <b className="font-semibold text-ink-900">toutes les filières du BTS</b> pour
               poser des questions et partager des méthodes. Gratuitement.
             </p>
@@ -380,7 +380,7 @@ export function Landing() {
         <div className="mx-auto grid max-w-6xl grid-cols-1 divide-y divide-ink-200 px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8">
           {[
             { to: 100, suffix: ' %', label: 'gratuit pour l’entraide, sans abonnement' },
-            { to: BTS_FILIERES.length, suffix: '+', label: 'filières du BTS dès le lancement, et la vôtre' },
+            { to: BTS_FILIERES.length, suffix: '', label: 'filières du BTS, la liste officielle du MESRS' },
             { to: 5, suffix: '', label: 'TP de labo virtuel 3D inclus' },
           ].map((s) => (
             <div key={s.label} className="py-10 text-center sm:px-6">

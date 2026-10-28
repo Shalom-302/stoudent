@@ -504,6 +504,40 @@ export interface ResourceItem {
   author: CommunityAuthor;
 }
 
+export type KindCounts = Partial<Record<ResourceKind, number>>;
+
+export interface ProgrammeFiliereSummary {
+  code: string;
+  name: string;
+  family: 'industrielle' | 'tertiaire';
+  documents: number;
+  epreuves: number;
+  epreuves_covered: number;
+}
+
+export interface ProgrammeOverview {
+  source: string;
+  filieres: ProgrammeFiliereSummary[];
+}
+
+export interface ProgrammeEpreuve {
+  name: string;
+  nature: 'écrite' | 'pratique' | 'orale';
+  coefficient: number;
+  total: number;
+  kinds: KindCounts;
+}
+
+export interface ProgrammeFiliere {
+  source: string;
+  code: string;
+  name: string;
+  family: 'industrielle' | 'tertiaire';
+  coefficients: number;
+  epreuves: ProgrammeEpreuve[];
+  other: { total: number; kinds: KindCounts };
+}
+
 export interface PendingResource {
   x_id: string;
   title: string;

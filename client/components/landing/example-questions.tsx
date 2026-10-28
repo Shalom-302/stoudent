@@ -67,7 +67,7 @@ const EXAMPLES = [
     ],
   },
   {
-    code: 'FC',
+    code: 'FCGE',
     name: 'Finance Comptabilité',
     subjects: [
       {

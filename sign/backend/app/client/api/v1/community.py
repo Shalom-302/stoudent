@@ -218,6 +218,18 @@ async def resource_facets(
     return response_base.success(request=request, data=data)
 
 
+@router.get(
+    '/library/programme',
+    summary='Official BTS programme (DECO): filières, or one filière with its épreuves and documents',
+    dependencies=[Depends(_resources_open)],
+)
+async def library_programme(
+    request: Request, filiere: Annotated[str | None, Query(max_length=10)] = None
+) -> ResponseModel:
+    data = await community_service.library_programme(code=filiere)
+    return response_base.success(request=request, data=data)
+
+
 @router.get('/resources', summary='Library: sujets, corrigés, cours, TD', dependencies=[Depends(_resources_open)])
 async def list_resources(
     request: Request,
@@ -227,11 +239,14 @@ async def list_resources(
     year: Annotated[int | None, Query(ge=1990, le=2100)] = None,
     q: Annotated[str | None, Query(max_length=200)] = None,
     sort: Literal['recent', 'popular', 'subject'] = 'recent',
+    epreuve: Annotated[str | None, Query(max_length=150)] = None,
+    other: bool = False,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> ResponseModel:
     data = await community_service.list_resources(
-        filiere=filiere, subject=subject, kind=kind, year=year, q=q, sort=sort, page=page, size=size
+        filiere=filiere, subject=subject, kind=kind, year=year, q=q, sort=sort, page=page, size=size,
+        epreuve=epreuve, other=other,
     )
     data['items'] = [ResourceDetail(**item) for item in data['items']]
     return response_base.success(request=request, data=data)

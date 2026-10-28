@@ -181,6 +181,15 @@ class Settings(BaseSettings):
     # members only, capped per hour (WhatsApp bans numbers that send too much).
     WHATSAPP_NOTIFY_ENABLED: bool = True
     WHATSAPP_NOTIFY_MAX_PER_HOUR: int = 3
+    # Announcements from SignManager, built not to get the gowa number banned:
+    # opted-in members only, strictly one after the other, a random 8-15 s gap,
+    # a 2-4 min break every 20 messages, and a stop after 3 failures in a row.
+    WHATSAPP_BROADCAST_MAX_RECIPIENTS: int = 500
+    WHATSAPP_BROADCAST_DELAY_MIN: float = 8.0
+    WHATSAPP_BROADCAST_DELAY_MAX: float = 15.0
+    WHATSAPP_BROADCAST_PAUSE_EVERY: int = 20
+    WHATSAPP_BROADCAST_PAUSE_SECONDS: tuple[int, int] = (120, 240)
+    WHATSAPP_BROADCAST_MAX_CONSECUTIVE_FAILURES: int = 3
 
     # Photos of exercise statements, stored in MinIO, served by the API.
     UPLOAD_MAX_BYTES: int = 8 * 1024 * 1024

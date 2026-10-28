@@ -58,25 +58,46 @@ la **Bibliothèque BTS** (1 230 sujets, corrigés, cours et TD) est ouverte.
 
 ### Bibliothèque BTS (`/bibliotheque`)
 
-- **1 230 documents** repérés sur fomesoutra.com : 674 sujets d'examen,
-  244 corrigés, 232 cours, 77 TD. Ils sont rangés par **filière** (20, dont les
-  rayons communs *Tronc commun*, *FI* et *FT*), **matière**, **chapitre** quand
-  la source le précise, **type** et **session**.
+Organisée sur le **programme officiel** de la Direction des Examens et Concours
+(bts.mesrs-ci.net) : filière → épreuves officielles avec coefficient, nature et
+poids dans la note → documents qui préparent chaque épreuve.
+
+- **33 filières officielles** (23 industrielles, 10 tertiaires), codes du MESRS.
+  Les anciens codes (FC, GC, GCB, MMA, CJ, SDI) sont convertis par la migration
+  `f3b8d4e6a7c9` et restent acceptés dans les liens (`?filiere=FC` → FCGE).
+- **1 230 documents** repérés sur fomesoutra.com (sujets, corrigés, cours, TD),
+  rattachés à l'épreuve qu'ils préparent (« Électronique » en RIT →
+  *Électronique analogique et numérique*). Les épreuves communes (français,
+  anglais, économie, gestion, maths, entrepreneuriat…) reçoivent aussi les
+  documents des rayons partagés *FI*, *FT* et *Tronc commun*. Ce qui ne se
+  rattache à aucune épreuve reste visible sous « Autres documents ».
+- Chaque filière affiche sa couverture (« 8/10 épreuves avec des documents ») ;
+  une épreuve vide invite à proposer un document. Le membre connecté voit sa
+  filière en premier.
 - **Liens, jamais de copie.** Chaque fiche ouvre la page du document chez son
-  hébergeur (pas le lien de téléchargement direct) et affiche la source et
-  l'auteur (« Source : fomesoutra.com · Auteur : TEHUA »). Les livres
-  d'éditeurs sont écartés. Encadré « Droits d'auteur » sur la page, motif de
-  signalement « Je suis l'auteur, retirez-le ».
-- Filtres avec compteurs, recherche multi-mots (« maths 2026 »), tris (sessions
-  récentes, par matière, les plus consultés), filtres dans l'URL (partageables).
-- **« Poser une question »** sur une fiche ouvre le formulaire prérempli
-  (filière, matière, lien du document).
-- **Proposer un document** (connecté) : le lien attend la validation d'un admin
-  dans SignManager > Modération > *Documents proposés*.
-- Le catalogue est dans l'image (`seeder/data/library_bts.json`) et rechargé à
-  chaque démarrage de l'API (`seed-library`, idempotent). Retirer une ligne du
-  JSON retire le document au démarrage suivant. Pour rafraîchir le catalogue :
-  `sign/tools/library/README.md`.
+  hébergeur et affiche la source et l'auteur. Les livres d'éditeurs sont
+  écartés. Encadré « Droits d'auteur », signalement « Je suis l'auteur ».
+- **« Poser une question »** sur une fiche préremplit le formulaire.
+- **Proposer un document** : validation par un admin (SignManager > Modération).
+- Données dans l'image : `seeder/data/library_bts.json` et
+  `seeder/data/programme_bts.json`, rechargées à chaque démarrage
+  (`seed-library`). Les régénérer : `sign/tools/library/README.md`.
+
+### Annonces WhatsApp (SignManager > WhatsApp)
+
+- Modèles prêts (nouvelle mise à jour, nouveaux sujets et cours, révisions
+  d'examen, message libre), aperçu en bulle WhatsApp, destinataires : tous,
+  une filière, ou des membres choisis.
+- **Seulement les membres qui ont accepté** les infos WhatsApp (compte actif,
+  numéro). Les autres sont comptés et affichés, jamais contactés. Comptes de
+  démo (`22500…`) exclus.
+- **Anti-bannissement** : envoi un par un, 8 à 15 s entre deux messages, pause
+  de 2 à 4 min tous les 20, arrêt après 3 échecs d'affilée, 500 destinataires
+  max par envoi, un seul envoi à la fois, durée estimée avant confirmation.
+  Réglages `WHATSAPP_BROADCAST_*` dans `core/conf.py`.
+- Chaque message rappelle pourquoi il est reçu et comment arrêter (profil).
+- L'envoi tourne dans le processus de l'API : un redémarrage pendant un envoi
+  l'interrompt (il est clos au bout de 15 min, le reste n'est pas envoyé).
 
 ### Notifications
 
@@ -234,9 +255,10 @@ Tous reproductibles, lancés avant chaque push :
 | Suite | Contenu | Dernier passage |
 |---|---|---|
 | API communauté | inscription, questions, réponses, votes, réputation, signalements | 34/34 |
-| API bibliothèque | facettes, filtres, recherche, compteur de visites, proposition en attente, doublon, validation/refus admin, signalement droits d'auteur | 23/23 |
+| API bibliothèque | programme officiel (33 filières, épreuves, coefficients), rayons par épreuve et rayons partagés, anciens codes, facettes, recherche, visites, propositions, validation admin, signalement droits d'auteur | 30/30 |
+| Annonces WhatsApp | faux serveur gowa : consentement seul, exclusions, délais, pause, arrêt sur échecs, un envoi à la fois ; API admin | 11/11 + 10/10 |
 | Bibliothèque, base neuve | migrations + `seed-library` avant la création des tables par l'API ; 2ᵉ passage sans doublon | OK |
-| Navigateur (bibliothèque) | bureau et mobile 390 px : pas de défilement horizontal, 0 erreur console | OK |
+| Navigateur (bibliothèque, SignManager WhatsApp) | filières, programme RIT, rayon d'épreuve, ancien code FC, mobile 390 px ; onglet WhatsApp avec aperçu : 0 erreur console | OK |
 | API sessions | cookie seul, rotation, multi-appareils, mot de passe oublié, blocage | 18/18 |
 | API fonctions | photos, notifications, merci, modification, suppression | 21/21 |
 | API compte | mot de passe, numéro, suppression et anonymisation | 21/21 |
@@ -291,6 +313,8 @@ membres consentants, à rythme limité.
 | Comptes de démo | `sign/backend/seeder/demo.py` |
 | Réglages (OTP, WhatsApp, photos, ressources) | `sign/backend/core/conf.py` |
 | Filières, exemples, contact | `client/lib/community.ts`, `client/components/landing/example-questions.tsx` |
+| Annonces WhatsApp | `sign/backend/app/admin/api/v1/broadcast.py`, `client/components/admin/whatsapp-broadcast.tsx` |
+| Programme officiel | `sign/backend/app/client/service/programme.py`, `seeder/data/programme_bts.json` |
 | Bibliothèque (page, API, catalogue) | `client/components/community/library-view.tsx`, `community_service.py` (Resources), `seeder/library.py`, `seeder/data/library_bts.json` |
 | Page question, formulaire | `client/app/(community)/questions/`, `client/components/community/` |
 | Relais vers l'API | `client/lib/server/proxy.ts` |

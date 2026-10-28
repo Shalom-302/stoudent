@@ -1,29 +1,55 @@
 /** Shared vocabulary for STOUDENT: filières, levels, report reasons. */
 
 /**
- * The BTS filières STOUDENT opens with. The code is what is stored and shown
- * on posts; the name explains it to someone from another filière. Members can
- * still type a filière missing from this list.
+ * The 33 BTS filières, with the official codes and names of the Direction des
+ * Examens et Concours (bts.mesrs-ci.net). The code is what is stored and shown
+ * on posts. Members can still type a filière missing from this list.
  */
 export const BTS_FILIERES = [
-  { code: 'RIT', name: 'Réseaux Informatiques et Télécommunications' },
-  { code: 'IDA', name: 'Informatique Développeur d’Application' },
-  { code: 'ELT', name: 'Électrotechnique' },
-  { code: 'SEI', name: 'Systèmes Électroniques et Informatiques' },
-  { code: 'MSP', name: 'Maintenance des Systèmes de Production' },
-  { code: 'FC', name: 'Finance Comptabilité' },
-  { code: 'GC', name: 'Gestion Commerciale' },
-  { code: 'RHC', name: 'Ressources Humaines et Communication' },
-  { code: 'LOG', name: 'Logistique' },
-  { code: 'AD', name: 'Assistanat de Direction' },
-  { code: 'FA', name: 'Finance Assurance' },
-  { code: 'CJ', name: 'Carrières Juridiques' },
-  { code: 'TH', name: 'Tourisme Hôtellerie' },
-  { code: 'GCB', name: 'Génie Civil option Bâtiment' },
-  { code: 'MMA', name: 'Moteur et Mécanique Automobile' },
-  { code: 'SDI', name: 'Sciences de l’Information' },
-  { code: 'GCT', name: 'Gestion des Collectivités Territoriales' },
+  { code: 'ATPA', name: 'Agriculture tropicale option production animale', family: 'industrielle' },
+  { code: 'ATPV', name: 'Agriculture tropicale option production végétale', family: 'industrielle' },
+  { code: 'AACV', name: 'Arts et aménagement du cadre de vie', family: 'industrielle' },
+  { code: 'CV', name: 'Communication visuelle', family: 'industrielle' },
+  { code: 'COS', name: 'Cosmétologie', family: 'industrielle' },
+  { code: 'ELT', name: 'Électrotechnique', family: 'industrielle' },
+  { code: 'GBAT', name: 'Génie civil option bâtiment', family: 'industrielle' },
+  { code: 'GGT', name: 'Génie civil option géomètre topographe', family: 'industrielle' },
+  { code: 'GTP', name: 'Génie civil option travaux publics', family: 'industrielle' },
+  { code: 'GEE', name: 'Génie énergétique et environnement', family: 'industrielle' },
+  { code: 'GERN', name: 'Gestion de l’environnement et des ressources naturelles', family: 'industrielle' },
+  { code: 'HST', name: 'Hygiène et sécurité du travail', family: 'industrielle' },
+  { code: 'IACC', name: 'Industries agro-alimentaires et chimiques option contrôle', family: 'industrielle' },
+  { code: 'IACP', name: 'Industries agro-alimentaires et chimiques option production', family: 'industrielle' },
+  { code: 'IDA', name: 'Informatique développeur d’applications', family: 'industrielle' },
+  { code: 'MSP', name: 'Maintenance des systèmes de production', family: 'industrielle' },
+  { code: 'MGP', name: 'Mines, géologie et pétrole', family: 'industrielle' },
+  { code: '2MA', name: 'Moteur et mécanique automobile', family: 'industrielle' },
+  { code: 'OPL', name: 'Optique lunetterie', family: 'industrielle' },
+  { code: 'RIT', name: 'Réseaux informatiques et télécommunications', family: 'industrielle' },
+  { code: 'SIP', name: 'Sécurité incendie et prévention', family: 'industrielle' },
+  { code: 'SEI', name: 'Systèmes électroniques et informatiques', family: 'industrielle' },
+  { code: 'URBA', name: 'Urbanisme', family: 'industrielle' },
+  { code: 'AD', name: 'Assistanat de direction', family: 'tertiaire' },
+  { code: 'CJPI', name: 'Carrières juridiques et professions immobilières', family: 'tertiaire' },
+  { code: 'FA', name: 'Finances assurances', family: 'tertiaire' },
+  { code: 'FCGE', name: 'Finances comptabilité et gestion des entreprises', family: 'tertiaire' },
+  { code: 'GEC', name: 'Gestion commerciale', family: 'tertiaire' },
+  { code: 'GCT', name: 'Gestion des collectivités territoriales', family: 'tertiaire' },
+  { code: 'LOG', name: 'Logistique', family: 'tertiaire' },
+  { code: 'RHC', name: 'Ressources humaines et communication', family: 'tertiaire' },
+  { code: 'SIN', name: 'Sciences de l’information', family: 'tertiaire' },
+  { code: 'TH', name: 'Tourisme hôtellerie', family: 'tertiaire' },
 ] as const;
+
+/** Codes used before the alignment on the official list (old links still resolve). */
+export const LEGACY_FILIERES: Record<string, string> = {
+  FC: 'FCGE',
+  GC: 'GEC',
+  GCB: 'GBAT',
+  MMA: '2MA',
+  CJ: 'CJPI',
+  SDI: 'SIN',
+};
 
 export const FILIERES: string[] = BTS_FILIERES.map((f) => f.code);
 

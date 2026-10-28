@@ -1,4 +1,5 @@
 import { adminApi } from '@/lib/api';
+import type { BroadcastItem, BroadcastPayload, BroadcastPreview } from '@/services/broadcast-types';
 import type { Paged, PendingResource, ReportQueueItem } from '@/types';
 
 export interface OverviewCounters {
@@ -104,6 +105,11 @@ export const signManagerService = {
   reports: (status: 'open' | 'resolved' | 'dismissed' = 'open', page = 1) =>
     adminApi.get<Paged<ReportQueueItem>>(`/moderation/reports?status=${status}&page=${page}`),
 
+  broadcastPreview: (payload: BroadcastPayload) =>
+    adminApi.post<BroadcastPreview>('/broadcast/preview', payload),
+  broadcast: (payload: BroadcastPayload) =>
+    adminApi.post<{ x_id: string; recipients: number; estimated_seconds: number }>('/broadcast', payload),
+  broadcasts: () => adminApi.get<{ items: BroadcastItem[] }>('/broadcast'),
   pendingResources: () => adminApi.get<{ items: PendingResource[] }>('/moderation/resources/pending'),
   reviewResource: (xId: string, action: 'approve' | 'reject') =>
     adminApi.post<{ status: string }>(`/moderation/resources/${xId}/review`, { action }),

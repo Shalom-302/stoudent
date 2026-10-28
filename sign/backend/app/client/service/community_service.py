@@ -8,9 +8,10 @@ is worth more than a useful question, and an accepted answer most of all.
 from urllib.parse import urlparse
 
 from fastapi import BackgroundTasks
-from sqlalchemy import String, cast, delete, func, or_, select, update
+from sqlalchemy import String, and_, cast, delete, false, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
+from backend.app.client.service import programme
 from backend.app.client.service.notify_service import add_notification, notify_first_answer
 from backend.app.client.schema.community import (
     CreateAnswerParam,
@@ -40,7 +41,7 @@ VIEW_WINDOW_SECONDS = 3600
 
 # Shown in the filters before the community has created its own.
 # The BTS filières STOUDENT opens with (codes; names live in client/lib/community.ts).
-DEFAULT_FILIERES = ['RIT', 'IDA', 'ELT', 'SEI', 'MSP', 'FC', 'GC', 'RHC', 'LOG', 'AD', 'FA', 'CJ', 'TH', 'GCB', 'MMA', 'SDI', 'GCT']
+DEFAULT_FILIERES = programme.codes()
 
 def _excerpt(text: str) -> str:
     flat = ' '.join(text.split())
@@ -575,10 +576,30 @@ class CommunityService:
     # keeps where to find it and who it comes from.
 
     @staticmethod
-    def _resource_filters(stmt, *, filiere, subject, kind, year, q):
+    def _resource_filters(stmt, *, filiere, subject, kind, year, q, epreuve=None, other=False):
         stmt = stmt.where(Resource.is_hidden.is_(False), Resource.status == 'published')
-        if filiere:
-            stmt = stmt.where(func.lower(Resource.filiere) == filiere.lower())
+        official = programme.filiere(filiere)
+        code = official['code'] if official else filiere
+        if official and epreuve:
+            # An épreuve: the filière's own documents, plus the shared shelves'
+            # documents of the matières that prepare it.
+            e = programme.epreuve(code, epreuve)
+            if e is None:
+                return stmt.where(false())
+            condition = and_(Resource.filiere == code, func.lower(Resource.subject) == e['name'].lower())
+            if e['shared_subjects']:
+                condition = or_(
+                    condition,
+                    and_(Resource.filiere.in_(official['shelves']), Resource.subject.in_(e['shared_subjects'])),
+                )
+            stmt = stmt.where(condition)
+        elif official and other:
+            names = [e['name'] for e in official['epreuves']]
+            stmt = stmt.where(
+                Resource.filiere == code, or_(Resource.subject.is_(None), Resource.subject.not_in(names))
+            )
+        elif code:
+            stmt = stmt.where(func.lower(Resource.filiere) == code.lower())
         if subject:
             stmt = stmt.where(func.lower(Resource.subject) == subject.lower())
         if kind:
@@ -634,10 +655,13 @@ class CommunityService:
         kind: str | None = None,
         year: int | None = None,
         sort: str = 'recent',
+        epreuve: str | None = None,
+        other: bool = False,
     ) -> dict:
         async with async_db_session() as db:
             stmt = CommunityService._resource_filters(
-                select(Resource), filiere=filiere, subject=subject, kind=kind, year=year, q=q
+                select(Resource), filiere=filiere, subject=subject, kind=kind, year=year, q=q,
+                epreuve=epreuve, other=other,
             )
             total = (await db.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
             if sort == 'popular':
@@ -693,6 +717,78 @@ class CommunityService:
             'kinds': pairs(kinds),
             'years': sorted(pairs(years), key=lambda y: -y['value']),
             'sources': pairs(sources),
+        }
+
+    @staticmethod
+    async def library_programme(*, code: str | None) -> dict:
+        """The official programme with, for each épreuve, the documents that prepare it.
+
+        Without a filière: every filière with its number of documents and of
+        épreuves that have at least one.
+        """
+        published = (Resource.is_hidden.is_(False), Resource.status == 'published')
+        async with async_db_session() as db:
+            rows = (
+                await db.execute(
+                    select(Resource.filiere, Resource.subject, Resource.kind, func.count())
+                    .where(*published)
+                    .group_by(Resource.filiere, Resource.subject, Resource.kind)
+                )
+            ).all()
+
+        def feeds(f: dict, e: dict, filiere: str, subject: str | None) -> bool:
+            if filiere == f['code']:
+                return (subject or '').lower() == e['name'].lower()
+            return filiere in f['shelves'] and subject in e['shared_subjects']
+
+        def counts(f: dict, e: dict) -> dict:
+            kinds: dict[str, int] = {}
+            for filiere, subject, kind, n in rows:
+                if feeds(f, e, filiere, subject):
+                    kinds[kind] = kinds.get(kind, 0) + n
+            return {'total': sum(kinds.values()), 'kinds': kinds}
+
+        meta = programme.programme()
+        if not code:
+            items = []
+            for f in meta['filieres']:
+                per_epreuve = [counts(f, e)['total'] for e in f['epreuves']]
+                names = {e['name'].lower() for e in f['epreuves']}
+                unmatched = sum(
+                    n for filiere, subject, _k, n in rows if filiere == f['code'] and (subject or '').lower() not in names
+                )
+                items.append(
+                    {
+                        'code': f['code'],
+                        'name': f['name'],
+                        'family': f['family'],
+                        'documents': sum(per_epreuve) + unmatched,
+                        'epreuves': len(f['epreuves']),
+                        'epreuves_covered': sum(1 for n in per_epreuve if n),
+                    }
+                )
+            return {'source': meta['source'], 'filieres': items}
+
+        f = programme.filiere(code)
+        if f is None:
+            raise errors.NotFoundError(msg='Filière inconnue.')
+        epreuves = [
+            {'name': e['name'], 'nature': e['nature'], 'coefficient': e['coefficient'], **counts(f, e)}
+            for e in f['epreuves']
+        ]
+        names = {e['name'].lower() for e in f['epreuves']}
+        other: dict[str, int] = {}
+        for filiere, subject, kind, n in rows:
+            if filiere == f['code'] and (subject or '').lower() not in names:
+                other[kind] = other.get(kind, 0) + n
+        return {
+            'source': meta['source'],
+            'code': f['code'],
+            'name': f['name'],
+            'family': f['family'],
+            'coefficients': sum(e['coefficient'] for e in f['epreuves']),
+            'epreuves': epreuves,
+            'other': {'total': sum(other.values()), 'kinds': other},
         }
 
     @staticmethod

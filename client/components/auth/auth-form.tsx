@@ -213,10 +213,14 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <option value="" disabled>
                   Choisir…
                 </option>
-                {BTS_FILIERES.map((f) => (
-                  <option key={f.code} value={f.code}>
-                    {f.code} · {f.name}
-                  </option>
+                {(['industrielle', 'tertiaire'] as const).map((family) => (
+                  <optgroup key={family} label={family === 'industrielle' ? 'Filières industrielles' : 'Filières tertiaires'}>
+                    {BTS_FILIERES.filter((f) => f.family === family).map((f) => (
+                      <option key={f.code} value={f.code}>
+                        {f.code} · {f.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
                 <option value={OTHER}>Autre filière…</option>
               </select>

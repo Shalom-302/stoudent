@@ -6,6 +6,8 @@ import type {
   QuestionDetail,
   QuestionSummary,
   ReportReason,
+  ProgrammeFiliere,
+  ProgrammeOverview,
   ResourceFacets,
   ResourceItem,
   ResourceKind,
@@ -48,6 +50,8 @@ export type ResourceSort = 'recent' | 'popular' | 'subject';
 
 export interface ResourceFilters {
   filiere?: string;
+  epreuve?: string;
+  other?: boolean;
   subject?: string;
   kind?: ResourceKind;
   year?: number;
@@ -109,6 +113,9 @@ export const communityService = {
   resources: (filters: ResourceFilters) => api.get<Paged<ResourceItem>>(`/community/resources${query(filters)}`),
   resourceFacets: (filters: Pick<ResourceFilters, 'filiere' | 'subject' | 'kind'>) =>
     api.get<ResourceFacets>(`/community/resources/facets${query(filters)}`),
+  programme: () => api.get<ProgrammeOverview>('/community/library/programme'),
+  programmeFiliere: (code: string) =>
+    api.get<ProgrammeFiliere>(`/community/library/programme${query({ filiere: code })}`),
   openResource: (xId: string) => api.post<{ url: string; open_count: number }>(`/community/resources/${xId}/open`),
   shareResource: (payload: ResourcePayload) =>
     api.post<{ x_id: string; status: string }>('/community/resources', payload),
