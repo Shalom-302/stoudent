@@ -17,8 +17,13 @@ Un étudiant s'inscrit avec son numéro WhatsApp et sa filière, pose une questi
 WhatsApp quand on lui répond, et reste connecté sur son téléphone. Le labo
 virtuel 3D (ex-SignalLab) est inclus sous l'onglet **Lab**.
 
-Le périmètre MVP de la note de concept est couvert, y compris les ressources :
-la **Bibliothèque BTS** (1 230 sujets, corrigés, cours et TD) est ouverte.
+Il prépare aussi ses examens dans la **Bibliothèque BTS** : le programme
+officiel de sa filière (épreuves et coefficients du MESRS) et, pour chaque
+épreuve, les sujets, corrigés, cours et TD qui la préparent (1 230 documents,
+source citée). L'équipe annonce les nouveautés par **WhatsApp** depuis
+SignManager, aux seuls membres qui l'ont accepté.
+
+Le périmètre MVP de la note de concept est couvert, ressources comprises.
 
 ---
 
@@ -114,17 +119,22 @@ poids dans la note → documents qui préparent chaque épreuve.
   **professeur vérifié** dans SignManager ; il débloque « Valider (prof) ».
 - SignManager : membres (recherche par pseudo, numéro, e-mail ; filière ;
   « infos WhatsApp ✓ »), activation des comptes, rôles, **onglet Modération**
-  (masquer, rejeter, rétablir), suivi du labo.
+  (signalements : masquer, rejeter, rétablir ; **documents proposés** :
+  publier, refuser), **onglet WhatsApp** (annonces), suivi du labo.
 
 ### Landing et identité
 
 Noir et blanc, couleurs Kortex (comme security.kortex.sbs), animations GSAP
 portées de shaapi, « Backed by Kortex ». La démo animée fait tourner une
-question IDA, FC et RIT ; une section « Exemples » montre des questions types
-par filière et matière (RIT, IDA, FC). Pages `/regles` et `/confidentialite`.
+question IDA, FCGE et RIT ; une section « Exemples » montre des questions types
+par filière et matière. Menu : Questions, Bibliothèque (« Sujets & cours » sur
+la landing). Pages `/regles` et `/confidentialite`.
 
-**Filières** (`client/lib/community.ts`) : RIT, IDA, ELT, SEI, MSP, FC, GC,
-RHC, LOG, AD. Un membre peut en saisir une autre.
+**Filières** (`client/lib/community.ts`) : les **33 filières officielles** du
+MESRS avec leurs codes (RIT, IDA, ELT, SEI, MSP, FCGE, GEC, RHC, LOG, AD, FA,
+CJPI, TH, GBAT, 2MA, SIN, GCT…), groupées industrielles / tertiaires à
+l'inscription. Un membre peut en saisir une autre. Les anciens codes (FC, GC,
+GCB, MMA, CJ, SDI) ont été convertis et restent acceptés dans les liens.
 
 ---
 
@@ -134,13 +144,15 @@ RHC, LOG, AD. Un membre peut en saisir une autre.
 signlab/                       dépôt github.com/Shalom-302/stoudent
 ├── sign/                      API  FastAPI (socle shaapi) · PostgreSQL · Redis · MinIO
 │   └── backend/
-│       ├── app/client/        API publique (/api/v1) : auth, community, labs…
-│       ├── app/admin/         back-office (/admin/api/v1) : SignManager, moderation
-│       ├── models/            community.py (questions, réponses, votes, notifications…)
-│       ├── seeder/            signallab.py (labos), demo.py (comptes de démo)
+│       ├── app/client/        API publique (/api/v1) : auth, community (+ bibliothèque), labs…
+│       ├── app/admin/         back-office (/admin/api/v1) : SignManager, moderation, broadcast
+│       ├── models/            community.py (questions, réponses, ressources…), broadcast.py
+│       ├── seeder/            signallab.py (labos), demo.py (démo), library.py (bibliothèque)
+│       │   └── data/          library_bts.json (catalogue), programme_bts.json (MESRS)
 │       └── services/          moteur scientifique du labo
+│   └── tools/library/         relevé fomesoutra, programme MESRS, rattachement aux épreuves
 ├── client/                    web  Next.js 15 · Tailwind 4 · GSAP · KaTeX · React Three Fiber
-│   ├── app/(community)/       questions, confidentialité, règles
+│   ├── app/(community)/       questions, bibliotheque, confidentialité, règles
 │   ├── app/api, app/admin/api relais vers l'API (lib/server/proxy.ts)
 │   └── components/            community/, landing/, student/, world3d/…
 ├── compose.image.yml          production Dokploy
@@ -172,7 +184,7 @@ domaine du site. L'API n'a pas de domaine public.
 | `PUBLIC_DOMAIN` | `stoudent.kortex.sbs` (sert aussi aux liens envoyés sur WhatsApp) |
 | `TOKEN_SECRET_KEY`, `OPERA_LOG_ENCRYPT_SECRET_KEY` | Secrets, à générer une fois |
 | `POSTGRES_PASSWORD`, `MINIO_SECRET_KEY` | Mots de passe des services (MinIO : 8 caractères min.) |
-| `OTP_ENABLED`, `GOWA_URL`, `GOWA_BASIC_USER`, `GOWA_BASIC_PASS` | WhatsApp, mêmes valeurs que shasec |
+| `OTP_ENABLED`, `GOWA_URL`, `GOWA_BASIC_USER`, `GOWA_BASIC_PASS` | WhatsApp (codes, notifications, annonces), mêmes valeurs que shasec |
 
 Si une variable obligatoire manque, le compose refuse de démarrer et la nomme.
 En production, l'API refuse aussi de démarrer avec les valeurs de dev
@@ -188,13 +200,18 @@ L'API rejoint le réseau `whatsapp-shared-network` pour joindre gowa
 API=shalom-stoudent-ap4f77-api-1
 docker exec $API python -m backend.cli seed-labs      # TP du labo (idempotent)
 docker exec $API python -m backend.cli seed-demo      # 6 comptes de démo + 12 questions (idempotent)
+docker exec $API python -m backend.cli seed-library   # bibliothèque : déjà lancé à chaque démarrage
 docker exec $API python -m backend.cli create-admin \
     --email admin@stoudent.kortex.sbs --password '…' --pseudo stoudent.admin
 ```
 
 **Comptes de démo** : un par filière (`yao.rit`, `awa.ida`, `kone.elt`,
-`fatou.sei`, `bamba.msp`, `marie.fc`), deux questions chacun. Leurs numéros
-sont dans la plage `225 00…`, attribuée à aucun opérateur.
+`fatou.sei`, `bamba.msp`, `marie.fc` en FCGE), deux questions chacun. Le compte
+`bibliotheque` porte le catalogue. Leurs numéros sont dans la plage `225 00…`,
+attribuée à aucun opérateur, et sont exclus des annonces WhatsApp.
+
+Au démarrage, l'API applique les migrations puis recharge la bibliothèque : un
+déploiement ne demande aucune commande à la main.
 
 ### Lancer en local
 
@@ -237,8 +254,13 @@ données : `contact@kortexdigital.net` (constante `PRIVACY_CONTACT`).
   exclu (conditions d'utilisation, compte requis).
   `COMMUNITY_RESOURCES_ENABLED=false` referme la bibliothèque si besoin.
 - **WhatsApp volontairement rare.** Un message par question, jamais pour les
-  votes, merci, validations : tout le reste passe par la cloche. Objectif : ne
-  pas être perçu comme du spam, et ne pas faire bannir le numéro gowa.
+  votes, merci, validations : tout le reste passe par la cloche. Les annonces
+  groupées vont aux seuls membres consentants, un message à la fois, lentement.
+  Objectif : ne pas être perçu comme du spam, et ne pas faire bannir le numéro
+  gowa.
+- **Le programme officiel fait foi.** Filières, codes, épreuves et coefficients
+  viennent de bts.mesrs-ci.net ; la bibliothèque se range dessus, et une
+  épreuve sans document reste affichée (« propose-le ») plutôt que cachée.
 - **Suppression = anonymisation.** Effacer une question détruirait les réponses
   des autres ; les données personnelles, elles, disparaissent.
 - **Plus aucune mention de SignalLab** côté utilisateur : les labos s'appellent
@@ -269,7 +291,10 @@ Tous reproductibles, lancés avant chaque push :
 Bugs trouvés par ces tests et corrigés : rafraîchissement de session qui
 n'avait jamais marché depuis le navigateur, jetons identiques dans la même
 seconde, réputation bloquée à 0, vues comptées plusieurs fois, migrations qui
-plantaient sur une base neuve, verrou SQL incompatible avec une jointure.
+plantaient sur une base neuve, verrou SQL incompatible avec une jointure,
+anciennes ressources de test (`example.org`) devenues visibles en local à
+l'ouverture de la bibliothèque (retirées), crawl des cours cassé par la
+conversion de chemins de Git Bash (`MSYS_NO_PATHCONV=1`).
 
 ---
 
@@ -290,12 +315,16 @@ plantaient sur une base neuve, verrou SQL incompatible avec une jointure.
 - [ ] Suivre une question
 - [ ] Commentaires courts sous une réponse
 - [ ] Référencement Google (pages de questions rendues côté serveur)
+- [ ] Bibliothèque : compléter les filières sans documents propres
+      (agriculture, cosmétologie, géomètre…) et les épreuves vides (EPP)
+- [ ] Bibliothèque : revoir les 105 « Autres documents » et les 58 sans matière
+- [ ] Annonces WhatsApp : reprendre un envoi interrompu par un redémarrage
 
 ### Plus tard (note de concept)
 
 Assistant IA (payant, avec quota gratuit), messagerie privée, application
-mobile, partenariat avec fomesoutra et dépôt de cours par les professeurs vérifiés, envois WhatsApp groupés (examens) aux
-membres consentants, à rythme limité.
+mobile, partenariat avec fomesoutra, dépôt de cours par les professeurs
+vérifiés (hébergés par STOUDENT, avec leur accord).
 
 ---
 
