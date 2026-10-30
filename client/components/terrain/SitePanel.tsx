@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { SiteId } from '@/lib/terrain/city';
+import type { EquipmentType } from '@/lib/terrain/city';
 import { SITE_CONTENT, type QuizItem } from '@/lib/terrain/sites';
 import { cn } from '@/lib/utils';
 import { signalService, type FibreDropInput, type MicrowaveLinkInput } from '@/services/signals';
@@ -344,7 +344,7 @@ export function SitePanel({
   onQuiz,
   onBeam,
 }: {
-  site: SiteId;
+  site: EquipmentType;
   progress: SiteProgress;
   onClose: () => void;
   onMission: () => void;

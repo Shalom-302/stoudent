@@ -1,4 +1,4 @@
-import type { SiteId } from './city';
+import type { EquipmentType } from './city';
 
 export interface QuizItem {
   question: string;
@@ -8,7 +8,7 @@ export interface QuizItem {
 }
 
 export interface SiteContent {
-  id: SiteId;
+  id: EquipmentType;
   title: string;
   /** One line under the title in the prompt. */
   subtitle: string;
@@ -23,7 +23,7 @@ export interface SiteContent {
   quiz: QuizItem[];
 }
 
-export const SITE_CONTENT: Record<SiteId, SiteContent> = {
+export const SITE_CONTENT: Record<EquipmentType, SiteContent> = {
   fh: {
     id: 'fh',
     title: 'Pylône de faisceau hertzien',
@@ -72,8 +72,8 @@ export const SITE_CONTENT: Record<SiteId, SiteContent> = {
       },
     ],
   },
-  pc: {
-    id: 'pc',
+  pbo: {
+    id: 'pbo',
     title: 'Point de concentration fibre (PBO)',
     subtitle: 'Le boîtier d’où part la fibre de chaque maison',
     subject: 'Réseaux optiques',
@@ -177,7 +177,7 @@ export const SITE_CONTENT: Record<SiteId, SiteContent> = {
     subtitle: 'Trois secteurs pour couvrir le quartier',
     subject: 'Réseaux mobiles',
     intro:
-      'Sur le toit de l’immeuble Orion, une station de base couvre le quartier. Trois antennes-panneaux, orientées à 120° les unes des autres, découpent la zone en trois secteurs. Le petit FH à côté relie le site au réseau de l’opérateur, quand il n’y a pas de fibre.',
+      'Sur le toit, une station de base couvre le quartier. Trois antennes-panneaux, orientées à 120° les unes des autres, découpent la zone en trois secteurs. Le petit FH à côté relie le site au réseau de l’opérateur, quand il n’y a pas de fibre.',
     parts: [
       { name: 'Antennes-panneaux sectorielles', role: 'Une par secteur, ouverture d’environ 65° chacune, inclinées vers le sol (tilt).' },
       { name: 'RRU (unité radio distante)', role: 'Près de l’antenne : émission et réception radio.' },
@@ -202,6 +202,101 @@ export const SITE_CONTENT: Record<SiteId, SiteContent> = {
       },
     ],
   },
+  'fh-roof': {
+    id: 'fh-roof',
+    title: 'FH de collecte sur toit',
+    subtitle: 'La liaison radio qui raccorde un relais au réseau',
+    subject: 'Transmissions',
+    intro:
+      'Une petite parabole sur un toit, pointée vers une autre parabole sur un toit voisin : c’est un faisceau hertzien de collecte (backhaul). Il transporte tout le trafic du relais GSM jusqu’à un site mieux raccordé, quand la fibre n’arrive pas encore. En ville, on en voit partout dès qu’on lève la tête.',
+    parts: [
+      { name: 'Parabole de 30 à 60 cm', role: 'Petite car la fréquence est haute (18 à 38 GHz) et la distance courte (quelques km).' },
+      { name: 'ODU fixée derrière', role: 'Radio extérieure, reliée à l’armoire du relais.' },
+      { name: 'Support et visée', role: 'L’antenne est pointée au dixième de degré près vers l’autre bout.' },
+      { name: 'Polarisation', role: 'Verticale ou horizontale : les deux bouts doivent être identiques.' },
+    ],
+    figures: [
+      { label: 'Fréquences courantes en ville', value: '18, 23, 38 GHz' },
+      { label: 'Débit typique', value: '100 Mbit/s à 1 Gbit/s' },
+      { label: 'Ouverture du faisceau (60 cm à 23 GHz)', value: 'environ 1,5°' },
+    ],
+    quiz: [
+      {
+        question: 'Pourquoi les paraboles de collecte en ville sont-elles petites ?',
+        options: [
+          'Parce que la fréquence est élevée : à diamètre égal le gain augmente, donc une petite parabole suffit',
+          'Pour coûter moins cher uniquement',
+          'Parce qu’elles ne servent qu’à la télévision',
+          'Pour ne pas être vues',
+        ],
+        answer: 0,
+        explain: 'Le gain varie en (πD/λ)² : à 23 GHz la longueur d’onde fait 1,3 cm, une parabole de 60 cm donne déjà près de 40 dBi.',
+      },
+      {
+        question: 'Si on désaligne une parabole de quelques degrés, que se passe-t-il ?',
+        options: ['Rien', 'Le niveau reçu chute fortement, la liaison peut tomber', 'Le débit double', 'La fréquence change'],
+        answer: 1,
+        explain: 'Le faisceau ne fait qu’environ 1,5° de large : quelques degrés suffisent à sortir du lobe principal.',
+      },
+    ],
+  },
+  smallcell: {
+    id: 'smallcell',
+    title: 'Small cell sur lampadaire',
+    subtitle: 'Une mini station de base au niveau de la rue',
+    subject: 'Réseaux mobiles',
+    intro:
+      'La small cell est une petite station de base (quelques watts) posée sur un lampadaire ou une façade. Elle couvre une centaine de mètres et soulage le relais du toit là où il y a beaucoup de monde : carrefour, marché, gare routière. Elle est raccordée en fibre, ou par un petit lien radio.',
+    parts: [
+      { name: 'Boîtier radio + antenne intégrée', role: 'Émet en 4G (et 5G sur les sites récents), faible puissance.' },
+      { name: 'Raccordement', role: 'Fibre qui monte dans le mât, ou petit FH.' },
+      { name: 'Alimentation', role: 'Prise sur l’éclairage public, avec batterie ou non.' },
+    ],
+    figures: [
+      { label: 'Puissance', value: '1 à 10 W (contre 20 à 60 W par secteur sur un toit)' },
+      { label: 'Rayon de couverture', value: '50 à 200 m' },
+    ],
+    quiz: [
+      {
+        question: 'Pourquoi ajouter une small cell alors qu’un relais couvre déjà la zone ?',
+        options: [
+          'Pour augmenter la capacité là où beaucoup d’utilisateurs se concentrent',
+          'Pour éclairer la rue',
+          'Pour remplacer la fibre',
+          'Pour capter la radio FM',
+        ],
+        answer: 0,
+        explain: 'Chaque cellule partage ses ressources radio entre ses utilisateurs : en découpant la zone, on multiplie la capacité.',
+      },
+    ],
+  },
+  nro: {
+    id: 'nro',
+    title: 'Central optique (NRO)',
+    subtitle: 'Là où démarre la fibre du quartier',
+    subject: 'Réseaux optiques',
+    intro:
+      'Le nœud de raccordement optique (NRO) est un petit bâtiment technique, souvent anonyme. Il abrite les OLT de l’opérateur : chaque port envoie la lumière vers jusqu’à 64 abonnés. De là, les gros câbles partent sous les trottoirs, de chambre en chambre, jusqu’aux armoires de rue (SRO), puis aux PBO sur les poteaux.',
+    parts: [
+      { name: 'OLT (Optical Line Terminal)', role: 'Équipement actif : un port GPON = un arbre optique vers les abonnés.' },
+      { name: 'Répartiteur optique (ODF)', role: 'Baies où arrivent toutes les fibres, brassées par jarretières.' },
+      { name: 'Énergie', role: 'Redresseurs, batteries et groupe électrogène : le central ne doit jamais s’arrêter.' },
+      { name: 'Climatisation', role: 'Les équipements actifs chauffent ; une panne de clim coupe le service.' },
+    ],
+    figures: [
+      { label: 'Capacité', value: 'de quelques milliers à plus de 100 000 lignes' },
+      { label: 'Puissance d’émission OLT (classe B+)', value: '+1,5 à +5 dBm' },
+    ],
+    quiz: [
+      {
+        question: 'Dans quel ordre la fibre va-t-elle du central à l’abonné ?',
+        options: ['NRO → SRO → PBO → box', 'PBO → NRO → SRO → box', 'Box → NRO → PBO → SRO', 'SRO → PBO → NRO → box'],
+        answer: 0,
+        explain: 'Transport du NRO à l’armoire de rue, distribution jusqu’au PBO, puis branchement jusqu’à la box (ONU).',
+      },
+    ],
+  },
 };
 
-export const SITE_ORDER: SiteId[] = ['fh', 'pc', 'sro', 'chambre', 'gsm'];
+/** Equipment types in the order the field notebook lists them. */
+export const SITE_ORDER: EquipmentType[] = ['fh', 'fh-roof', 'gsm', 'smallcell', 'nro', 'sro', 'chambre', 'pbo'];

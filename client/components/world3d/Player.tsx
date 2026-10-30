@@ -60,6 +60,8 @@ export interface PlayerWorld<Id extends string> {
   exit?: [number, number];
   walk?: number;
   run?: number;
+  /** Ground height under a point (a sidewalk kerb); flat floor when absent. */
+  groundAt?: (x: number, z: number) => number;
 }
 
 const ROOM: PlayerWorld<PointId> = {
@@ -94,10 +96,12 @@ export interface PlayerInput {
   lookYaw: number;
   lookPitch: number;
   interact: boolean;
+  /** Set by a map's "go there": the avatar is dropped at this spot next frame. */
+  teleport: { x: number; z: number; heading: number; lookUp?: boolean } | null;
 }
 
 export function createPlayerInput(): PlayerInput {
-  return { move: { x: 0, y: 0, run: false }, lookYaw: 0, lookPitch: 0, interact: false };
+  return { move: { x: 0, y: 0, run: false }, lookYaw: 0, lookPitch: 0, interact: false, teleport: null };
 }
 
 export interface PlayerAppearance {
@@ -195,6 +199,16 @@ export default function Player<Id extends string = PointId>({
     const dt = Math.min(delta, 0.05);
     const s = state.current;
 
+    if (input.teleport) {
+      s.position.set(input.teleport.x, 0, input.teleport.z);
+      s.heading = input.teleport.heading;
+      // Face the destination, camera behind the avatar.
+      s.cameraYaw = input.teleport.heading;
+      // Tall equipment: start with the camera low, looking up at it.
+      s.cameraPitch = input.teleport.lookUp ? CAM.minPitch : 0.24;
+      input.teleport = null;
+    }
+
     // -- Look ---------------------------------------------------------------
     // Drag right looks right, drag down looks down - the plain mouse-look
     // convention, identical in both views so switching does not flip the
@@ -260,6 +274,11 @@ export default function Player<Id extends string = PointId>({
       if (speedRef.current < 0.02) speedRef.current = 0;
     }
 
+    if (world.groundAt) {
+      // Step up or down a kerb quickly, but not in one frame.
+      const ground = world.groundAt(s.position.x, s.position.z);
+      s.position.y += (ground - s.position.y) * Math.min(dt * 18, 1);
+    }
     if (body.current) {
       body.current.position.copy(s.position);
       body.current.rotation.y = s.heading;
@@ -307,11 +326,12 @@ export default function Player<Id extends string = PointId>({
     }
 
     if (view === 'first') {
-      camera.position.set(s.position.x, INTERACTION.eyeHeight, s.position.z);
+      const eye = s.position.y + INTERACTION.eyeHeight;
+      camera.position.set(s.position.x, eye, s.position.z);
       // Look along +forward, same convention as the movement vector.
       camTarget.set(
         s.position.x - Math.sin(s.cameraYaw) * Math.cos(s.cameraPitch),
-        INTERACTION.eyeHeight - Math.sin(s.cameraPitch),
+        eye - Math.sin(s.cameraPitch),
         s.position.z + Math.cos(s.cameraYaw) * Math.cos(s.cameraPitch),
       );
       camera.lookAt(camTarget);

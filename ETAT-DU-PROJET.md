@@ -296,7 +296,7 @@ Tous reproductibles, lancés avant chaque push :
 | API communauté | inscription, questions, réponses, votes, réputation, signalements | 34/34 |
 | API photo des réponses | envoi, URL étrangère refusée, fil et page question, modification qui retire la photo | 7/7 |
 | API Labo Terrain | affaiblissement en espace libre, rayon de Fresnel, renflement terrestre, gain d'une parabole, +6 dB pour une distance doublée, obstacle qui coupe la liaison et hauteur suggérée, budget GPON, limite de 128 abonnés par port, bornes refusées | 20/20 |
-| Navigateur, Labo Terrain | page Laboratoires (terrain + 5 filières « en cours de développement »), scène, marche jusqu'au point de concentration, mission fibre réussie, quiz, carnet ; téléphone 390 px ; salle de TP inchangée (marche jusqu'au poste D, TP ouvert) | 11/11 + salle OK, 0 erreur console |
+| Navigateur, Labo Terrain | page Laboratoires, scène, marche jusqu'au PBO, mission fibre réussie, quiz, carnet ; carte et « Y aller » au pylône FH, mission FH ; téléphone 390 px ; salle de TP inchangée (marche jusqu'au poste D, TP ouvert) | 13/13 + salle OK, 0 erreur console |
 | API fil social (V2.0) | qui a aimé (3 noms, total, 👎 anonymes), meilleure réponse dans le fil, partages dédoublonnés, commentaires (droits, notifications, signalement, compteurs), suppression d'une réponse commentée | 39/39 |
 | Navigateur, fil social | visiteur et membre, ordinateur et téléphone 390 px : aimer, voir qui a aimé, commenter, répondre et partager depuis le fil, page question | 15/15, 0 erreur console |
 | API bibliothèque | programme officiel (33 filières, épreuves, coefficients), rayons par épreuve et rayons partagés, anciens codes, facettes, recherche, visites, propositions, validation admin, signalement droits d'auteur | 30/30 |
@@ -426,28 +426,40 @@ personne, ZQSD/flèches, manche virtuel, collisions).
 
 ## E. Labo Terrain (30 octobre 2026)
 
-Un quartier inventé, « inspiré d'Abidjan », où l'avatar se promène dehors
-(`/terrain`, carte « Dehors » sur la page Laboratoires). L'idée vient du projet
+**Une ville câblée qui remplace la sortie terrain** (`/terrain`, carte « Dehors »
+sur la page Laboratoires). L'étudiant n'a plus besoin d'aller dans la rue : en
+quelques minutes il voit ce qu'une visite montrerait. L'idée vient du projet
 d'un ami (ville d'Abidjan en three.js) ; **aucun code n'a été repris**, tout est
-écrit sur notre stack (React Three Fiber, même `Player` que la salle).
+sur notre stack (React Three Fiber, même `Player` que la salle).
 
-- **Ville en configuration** (`client/lib/terrain/city.ts`) : rues, immeubles
-  repères (Sigma, Orion), sites télécoms, bâtiments générés avec une graine fixe
-  (le même quartier pour tous), collisions. Ajouter un site = ajouter un objet.
-- **5 sites** (`client/lib/terrain/sites.ts`) : pylône de faisceau hertzien et
-  son pylône B, point de concentration fibre sur poteau, armoire de rue (SRO),
-  chambre de tirage, relais GSM sur toit. Chacun : fiche (ce que tu vois,
-  chiffres clés), quiz corrigé, et « Demande à la communauté » qui préremplit
-  une question RIT.
+- **Catalogue d'équipements** (`client/lib/terrain/city.ts`, `EQUIPMENT`) :
+  2 pylônes FH reliés au-dessus de l'immeuble Sigma, 4 FH de collecte sur les
+  toits, 3 relais 2G/4G sur toit, 2 small cells sur lampadaires, le central
+  optique (NRO), 2 armoires de rue (SRO), 4 chambres de tirage le long du
+  parcours de la fibre, 3 PBO sur poteaux avec leurs câbles de branchement.
+  Ajouter un équipement = ajouter un objet.
+- **Les réseaux rendus visibles** (bouton « Réseaux », activé par défaut) :
+  liaisons radio entre paraboles (la liaison principale passe au vert ou au
+  rouge selon le dernier calcul), fibre enterrée du NRO aux chambres et aux
+  armoires, fibre aérienne sur les poteaux. **Étiquettes 3D** au-dessus de
+  chaque équipement, cachées par les immeubles.
+- **Carte** : la mini-carte s'ouvre en plein écran (tous les équipements par
+  type, la fibre, les liaisons) ; **« Y aller »** dépose l'avatar devant
+  l'équipement, caméra tournée vers le haut pour ce qui est en hauteur.
+- **8 types de fiches** (`client/lib/terrain/sites.ts`) : ce que tu vois,
+  chiffres clés, quiz corrigé, « Demande à la communauté ». Le carnet compte les
+  types vus et maîtrisés (gardé sur l'appareil pour l'instant).
 - **Missions calculées par l'API** (`sign/backend/services/link_budget_service.py`,
-  `POST /signals/microwave-link` et `/signals/fibre-drop`) : rétablir la liaison
-  FH au-dessus de l'immeuble Sigma avec 20 dB de marge (profil et zone de
-  Fresnel dessinés), raccorder 64 abonnés GPON avec 3 dB de marge. Le faisceau
-  entre les deux pylônes passe au vert ou au rouge selon le dernier calcul.
-- **Carnet de terrain** et mini-carte : sites découverts et maîtrisés (quiz, plus
-  mission s'il y en a une). Le carnet est gardé **sur l'appareil** pour l'instant.
-- **Téléphones** : bâtiments et arbres instanciés (un appel de dessin chacun),
-  résolution plafonnée à 1,5, ombres 1024 px.
+  `POST /signals/microwave-link` et `/signals/fibre-drop`) : liaison FH au-dessus
+  de Sigma avec 20 dB de marge, 64 abonnés GPON avec 3 dB de marge.
+- **Rue réaliste mais au second plan** : textures dessinées par le code (bitume,
+  pavés et bordures, latérite, façades avec fenêtres et climatiseurs, tôles,
+  polytanks), ciel et soleil dont les ombres suivent l'avatar, brume, ville au
+  loin, cocotiers, lampadaires, poteaux et câbles, voitures qui roulent à droite
+  et s'arrêtent devant l'étudiant (taxis orange, woro-woro bleus), passants.
+- **Téléphones** : murs, toits, routes et trottoirs fusionnés en quelques
+  maillages, pylône en un seul maillage, arbres et équipements répétés
+  instanciés, passants dessinés seulement à moins de 45 m, résolution plafonnée.
 - **Autres filières** : ELT, GBAT, LOG, FCGE, GEC affichées « Labo en cours de
   développement » sur la page Laboratoires.
 
@@ -461,7 +473,8 @@ d'un ami (ville d'Abidjan en three.js) ; **aucun code n'a été repris**, tout e
 - [ ] Labo Télécom (PABX, SIP, VoIP, GSM), labos pour d'autres filières
 - [ ] Assets Blender à la place de la géométrie procédurale (`useGLTF`)
 - [ ] Labo Terrain : carnet enregistré côté serveur (XP, badges), mission
-      relais GSM (azimuts, tilt), circulation et passants
+      relais GSM (azimuts, tilt), monter dans une voiture / un taxi, avatar
+      plus réaliste (modèle 3D riggé)
 
 | Sujet | Fichier |
 |---|---|

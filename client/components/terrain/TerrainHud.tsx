@@ -1,29 +1,73 @@
 'use client';
 
-import { ArrowLeft, BookOpen, Eye, Footprints, Keyboard, Search } from 'lucide-react';
+import { ArrowLeft, BookOpen, Eye, Footprints, Keyboard, Map as MapIcon, Navigation, Network, Search, Tag, X } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
 import { MovePad } from '@/components/world3d/controls/MovePad';
 import type { PlayerInput, PlayerTracker } from '@/components/world3d/Player';
 import { Button } from '@/components/ui/button';
-import { EXTENT, ORION, SIGMA, SITES, STREETS, type SiteId } from '@/lib/terrain/city';
+import {
+  BUILDINGS,
+  EQUIPMENT,
+  EXTENT,
+  FIBRE_ROUTE,
+  STREETS,
+  equipmentById,
+  type Equipment,
+  type EquipmentType,
+} from '@/lib/terrain/city';
 import { SITE_CONTENT, SITE_ORDER } from '@/lib/terrain/sites';
 import { cn } from '@/lib/utils';
 
-const MAP = 132; // px
+/** Pin colour per type, shared by the map and its legend. */
+const TYPE_COLOR: Record<EquipmentType, string> = {
+  fh: '#0ea5e9',
+  'fh-roof': '#38bdf8',
+  gsm: '#a855f7',
+  smallcell: '#c084fc',
+  nro: '#ea580c',
+  sro: '#f97316',
+  chambre: '#fb923c',
+  pbo: '#fdba74',
+};
 
-/** North-up map of the district; the arrow follows the avatar, pins turn green once examined. */
-function MiniMap({ tracker, discovered }: { tracker: PlayerTracker; discovered: Set<SiteId> }) {
+/** Drops the avatar at the spot where the equipment is examined, facing it. */
+function goTo(input: PlayerInput, e: Equipment) {
+  input.teleport = {
+    x: e.stand[0],
+    z: e.stand[1],
+    heading: Math.atan2(e.at[0] - e.stand[0], e.at[1] - e.stand[1]),
+    lookUp: e.type === 'fh' || e.type === 'gsm' || e.type === 'fh-roof',
+  };
+}
+
+/**
+ * North-up plan of the district: streets, buildings, the fibre route and
+ * every piece of equipment. The arrow follows the avatar.
+ */
+function Plan({
+  size,
+  tracker,
+  discovered,
+  onPick,
+  selected,
+}: {
+  size: number;
+  tracker: PlayerTracker;
+  discovered: Set<EquipmentType>;
+  onPick?: (e: Equipment) => void;
+  selected?: string | null;
+}) {
   const arrow = React.useRef<SVGGElement>(null);
-  const scale = MAP / (EXTENT * 2);
-  const px = (v: number) => (v + EXTENT) * scale;
+  const scale = size / (EXTENT * 2);
+  const px = React.useCallback((v: number) => (v + EXTENT) * scale, [scale]);
 
   React.useEffect(() => {
     let frame = 0;
     const tick = () => {
       if (arrow.current) {
-        // heading 0 faces +z (south on the map), hence the 180° turn.
+        // heading 0 faces +z (down on the plan), hence the 180° turn.
         const deg = 180 - (tracker.heading * 180) / Math.PI;
         arrow.current.setAttribute('transform', `translate(${px(tracker.x)} ${px(tracker.z)}) rotate(${deg})`);
       }
@@ -31,100 +75,231 @@ function MiniMap({ tracker, discovered }: { tracker: PlayerTracker; discovered: 
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- px depends on constants only
-  }, [tracker]);
+  }, [tracker, px]);
 
+  const r = Math.max(3, size / 45);
   return (
-    <svg
-      width={MAP}
-      height={MAP}
-      viewBox={`0 0 ${MAP} ${MAP}`}
-      className="rounded-xl border border-ink-200 bg-[#d8c19c]/95 shadow"
-      role="img"
-      aria-label="Plan du quartier"
-    >
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block" role="img" aria-label="Plan du quartier">
+      <rect width={size} height={size} fill="#d8c19c" />
+      {BUILDINGS.map((b, i) => (
+        <rect key={i} x={px(b.minX)} y={px(b.minZ)} width={(b.maxX - b.minX) * scale} height={(b.maxZ - b.minZ) * scale} fill={b.name ? '#8f9aa3' : '#c4ab84'} />
+      ))}
       {STREETS.map((s) => (
         <rect key={s.name} x={px(s.minX)} y={px(s.minZ)} width={(s.maxX - s.minX) * scale} height={(s.maxZ - s.minZ) * scale} fill="#55595d" />
       ))}
-      {[SIGMA, ORION].map((b) => (
-        <rect key={b.name} x={px(b.minX)} y={px(b.minZ)} width={(b.maxX - b.minX) * scale} height={(b.maxZ - b.minZ) * scale} fill="#8f9aa3" />
-      ))}
-      {SITES.map((s) => (
-        <circle key={s.id} cx={px(s.at[0])} cy={px(s.at[1])} r={4} fill={discovered.has(s.id) ? '#21b36b' : '#f2b705'} stroke="#1d2023" strokeWidth={1} />
+      <polyline
+        points={FIBRE_ROUTE.map(([x, z]) => `${px(x)},${px(z)}`).join(' ')}
+        fill="none"
+        stroke="#ff8a1f"
+        strokeWidth={Math.max(1.5, size / 160)}
+        strokeDasharray="4 3"
+      />
+      {EQUIPMENT.filter((e) => e.link && e.id < e.link).map((e) => {
+        const o = equipmentById(e.link!)!;
+        return <line key={e.id} x1={px(e.at[0])} y1={px(e.at[1])} x2={px(o.at[0])} y2={px(o.at[1])} stroke="#38bdf8" strokeWidth={1.2} strokeDasharray="3 3" />;
+      })}
+      {EQUIPMENT.map((e) => (
+        <circle
+          key={e.id}
+          cx={px(e.at[0])}
+          cy={px(e.at[1])}
+          r={selected === e.id ? r * 1.6 : r}
+          fill={TYPE_COLOR[e.type]}
+          stroke={discovered.has(e.type) ? '#21b36b' : '#1d2023'}
+          strokeWidth={discovered.has(e.type) ? 2 : 1}
+          className={onPick ? 'cursor-pointer' : undefined}
+          onClick={onPick ? () => onPick(e) : undefined}
+        />
       ))}
       <g ref={arrow}>
-        <path d="M0 -6 L4.5 5 L0 2.5 L-4.5 5 Z" fill="#ffffff" stroke="#1d2023" strokeWidth={1} />
+        <path d={`M0 ${-r * 2} L${r * 1.5} ${r * 1.6} L0 ${r * 0.8} L${-r * 1.5} ${r * 1.6} Z`} fill="#ffffff" stroke="#1d2023" strokeWidth={1} />
       </g>
     </svg>
+  );
+}
+
+/** The district map, full screen: pick an equipment, read what it is, go there. */
+function FullMap({
+  input,
+  tracker,
+  discovered,
+  onClose,
+}: {
+  input: PlayerInput;
+  tracker: PlayerTracker;
+  discovered: Set<EquipmentType>;
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = React.useState<string | null>(null);
+  const [size, setSize] = React.useState(320);
+  React.useEffect(() => {
+    const fit = () => setSize(Math.min(window.innerWidth - 32, window.innerHeight - 260, 560));
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+  const go = (e: Equipment) => {
+    goTo(input, e);
+    onClose();
+  };
+
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-30 overflow-y-auto bg-ink-900/60 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-label="Carte du quartier">
+      <div className="mx-auto max-w-5xl rounded-2xl bg-white p-4 shadow-2xl">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="font-display text-lg font-semibold text-ink-900">Carte du quartier</p>
+            <p className="text-xs text-ink-500">Touche un équipement sur la carte ou dans la liste, puis « Y aller ».</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Fermer la carte" className="rounded-md p-1.5 text-ink-500 hover:bg-ink-50 hover:text-ink-900">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row">
+          <div className="shrink-0 self-center overflow-hidden rounded-xl border border-ink-200">
+            <Plan size={size} tracker={tracker} discovered={discovered} onPick={(e) => setSelected(e.id)} selected={selected} />
+          </div>
+          <ul className="min-w-0 flex-1 space-y-3">
+            {SITE_ORDER.map((type) => {
+              const items = EQUIPMENT.filter((e) => e.type === type);
+              return (
+                <li key={type}>
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-500">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: TYPE_COLOR[type] }} />
+                    {SITE_CONTENT[type].title}
+                    {discovered.has(type) && <span className="text-success">· vu</span>}
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {items.map((e, i) => (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => go(e)}
+                        onMouseEnter={() => setSelected(e.id)}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium',
+                          selected === e.id ? 'border-ink-900 bg-ink-900 text-white' : 'border-ink-200 text-ink-700 hover:border-ink-900',
+                        )}
+                      >
+                        <Navigation className="h-3 w-3" aria-hidden />
+                        Y aller{items.length > 1 ? ` · ${i + 1}` : ''}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }
 
 interface TerrainHudProps {
   input: PlayerInput;
   tracker: PlayerTracker;
-  near: SiteId | null;
+  near: string | null;
   view: 'third' | 'first';
-  discovered: Set<SiteId>;
-  mastered: Set<SiteId>;
+  discovered: Set<EquipmentType>;
+  mastered: Set<EquipmentType>;
+  networks: boolean;
+  labels: boolean;
   onToggleView: () => void;
+  onToggleNetworks: () => void;
+  onToggleLabels: () => void;
 }
 
-export function TerrainHud({ input, tracker, near, view, discovered, mastered, onToggleView }: TerrainHudProps) {
+export function TerrainHud({
+  input,
+  tracker,
+  near,
+  view,
+  discovered,
+  mastered,
+  networks,
+  labels,
+  onToggleView,
+  onToggleNetworks,
+  onToggleLabels,
+}: TerrainHudProps) {
   const [notebook, setNotebook] = React.useState(false);
-  const site = near ? SITE_CONTENT[near] : null;
+  const [map, setMap] = React.useState(false);
+  const here = equipmentById(near);
+  const content = here ? SITE_CONTENT[here.type] : null;
+  const toggle = 'bg-white/90 aria-pressed:bg-ink-900 aria-pressed:text-white';
 
   return (
     <div className="pointer-events-none absolute inset-0">
       <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-3 sm:p-4">
-        <div className="pointer-events-auto flex flex-wrap gap-2">
+        <div className="pointer-events-auto flex max-w-[calc(100%-150px)] flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild className="bg-white/90">
-            <Link href="/labs">
+            <Link href="/labs" aria-label="Laboratoires">
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Laboratoires</span>
             </Link>
-          </Button>
-          <Button variant="outline" size="sm" onClick={onToggleView} className="bg-white/90">
-            <Eye className="h-4 w-4" />
-            <span className="hidden sm:inline">{view === 'third' ? 'Vue 1re personne' : 'Vue 3e personne'}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => setNotebook((v) => !v)} aria-expanded={notebook} className="bg-white/90">
             <BookOpen className="h-4 w-4" />
             Carnet {discovered.size}/{SITE_ORDER.length}
           </Button>
+          <Button variant="outline" size="sm" onClick={onToggleNetworks} aria-pressed={networks} className={toggle}>
+            <Network className="h-4 w-4" />
+            <span className="hidden sm:inline">Réseaux</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={onToggleLabels} aria-pressed={labels} className={toggle}>
+            <Tag className="h-4 w-4" />
+            <span className="hidden sm:inline">Étiquettes</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={onToggleView} className="bg-white/90" aria-label={view === 'third' ? 'Vue 1re personne' : 'Vue 3e personne'}>
+            <Eye className="h-4 w-4" />
+          </Button>
         </div>
-        <div className="pointer-events-auto">
-          <MiniMap tracker={tracker} discovered={discovered} />
-        </div>
+        <button
+          type="button"
+          onClick={() => setMap(true)}
+          aria-label="Ouvrir la carte"
+          className="pointer-events-auto relative overflow-hidden rounded-xl border border-ink-200 shadow"
+        >
+          <Plan size={132} tracker={tracker} discovered={discovered} />
+          <span className="absolute bottom-1 right-1 inline-flex items-center gap-1 rounded bg-ink-900/85 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+            <MapIcon className="h-3 w-3" /> Carte
+          </span>
+        </button>
       </div>
+
+      {networks && (
+        <div className="pointer-events-none absolute right-3 top-[156px] hidden rounded-lg bg-white/90 px-2.5 py-1.5 text-[11px] text-ink-700 shadow sm:right-4 sm:block">
+          <p className="flex items-center gap-1.5">
+            <span className="h-1 w-4 rounded bg-[#38bdf8]" /> Liaison radio
+          </p>
+          <p className="mt-1 flex items-center gap-1.5">
+            <span className="h-1 w-4 rounded bg-[#ff8a1f]" /> Fibre (enterrée, aérienne)
+          </p>
+        </div>
+      )}
 
       {notebook && (
         <div className="pointer-events-auto absolute left-3 top-16 w-72 rounded-2xl border border-ink-200 bg-white/95 p-4 shadow-xl backdrop-blur sm:left-4">
           <p className="font-display text-base font-semibold text-ink-900">Carnet de terrain</p>
-          <p className="mt-0.5 text-xs text-ink-500">Trouve les sites jaunes sur le plan et examine-les.</p>
+          <p className="mt-0.5 text-xs text-ink-500">Examine chaque type d’équipement. Le quiz (et la mission) le rendent « maîtrisé ».</p>
           <ul className="mt-3 space-y-2">
-            {SITE_ORDER.map((id) => (
-              <li key={id} className="flex items-center gap-2 text-sm">
-                <span
-                  className={cn(
-                    'h-2.5 w-2.5 shrink-0 rounded-full',
-                    mastered.has(id) ? 'bg-success' : discovered.has(id) ? 'bg-[#f2b705]' : 'bg-ink-200',
-                  )}
-                />
-                <span className={discovered.has(id) ? 'text-ink-900' : 'text-ink-400'}>
-                  {discovered.has(id) ? SITE_CONTENT[id].title : '???'}
-                </span>
-                {mastered.has(id) && <span className="ml-auto text-[11px] font-semibold text-success">maîtrisé</span>}
+            {SITE_ORDER.map((type) => (
+              <li key={type} className="flex items-center gap-2 text-sm">
+                <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', mastered.has(type) ? 'bg-success' : discovered.has(type) ? 'bg-[#f2b705]' : 'bg-ink-200')} />
+                <span className={discovered.has(type) ? 'text-ink-900' : 'text-ink-500'}>{SITE_CONTENT[type].title}</span>
+                {mastered.has(type) && <span className="ml-auto text-[11px] font-semibold text-success">maîtrisé</span>}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {site && (
+      {here && content && (
         <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4">
           <div className="pointer-events-auto max-w-sm rounded-2xl border border-ink-200 bg-white/95 p-3 shadow-lg backdrop-blur">
-            <p className="text-sm font-semibold text-ink-900">{site.title}</p>
-            <p className="mt-0.5 text-xs text-ink-500">{site.subtitle}</p>
+            <p className="text-sm font-semibold text-ink-900">{here.label}</p>
+            <p className="mt-0.5 text-xs text-ink-500">{content.subtitle}</p>
             <Button
               size="sm"
               className="mt-2.5 w-full"
@@ -144,9 +319,12 @@ export function TerrainHud({ input, tracker, near, view, discovered, mastered, o
         <div className="flex flex-col items-end gap-2">
           <p className="pointer-events-none hidden items-center gap-2 rounded-full bg-ink-900/85 px-3 py-1.5 text-[11px] text-white lg:flex">
             <Keyboard className="h-3.5 w-3.5" />
-            ZQSD / flèches · glisser pour regarder · Maj pour courir · E pour examiner
+            ZQSD / flèches · glisser pour regarder · Maj pour courir · E pour examiner · carte pour y aller
           </p>
           <div className="pointer-events-auto flex gap-2">
+            <Button variant="outline" size="sm" className="bg-white/90" onClick={() => setMap(true)}>
+              <MapIcon className="h-4 w-4" /> Carte
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -166,6 +344,8 @@ export function TerrainHud({ input, tracker, near, view, discovered, mastered, o
           </div>
         </div>
       </div>
+
+      {map && <FullMap input={input} tracker={tracker} discovered={discovered} onClose={() => setMap(false)} />}
     </div>
   );
 }

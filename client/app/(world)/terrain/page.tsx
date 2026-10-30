@@ -8,7 +8,7 @@ import { SitePanel } from '@/components/terrain/SitePanel';
 import { TerrainHud } from '@/components/terrain/TerrainHud';
 import { LookSurface } from '@/components/world3d/controls/MovePad';
 import { createPlayerInput, type PlayerTracker } from '@/components/world3d/Player';
-import { SPAWN, type SiteId } from '@/lib/terrain/city';
+import { SPAWN, equipmentById, type EquipmentType } from '@/lib/terrain/city';
 import { SITE_CONTENT } from '@/lib/terrain/sites';
 import { studentService } from '@/services/student';
 
@@ -25,13 +25,15 @@ const TerrainScene = dynamic(() => import('@/components/terrain/TerrainScene'), 
 const SKINS: Record<string, string> = { default: '#c9a184', medium: '#a9784f', dark: '#7d4f33' };
 const HAIRS: Record<string, string> = { default: '#2c2620', blond: '#c7a25e', red: '#8f4429' };
 
+/** Equipment types seen, missions and quizzes passed. */
 interface Notebook {
-  discovered: SiteId[];
-  missions: SiteId[];
-  quizzes: SiteId[];
+  discovered: EquipmentType[];
+  missions: EquipmentType[];
+  quizzes: EquipmentType[];
 }
 
-const STORAGE_KEY = 'stoudent.terrain.v1';
+// v2: the notebook counts equipment types, no longer the five sites of v1.
+const STORAGE_KEY = 'stoudent.terrain.v2';
 const EMPTY: Notebook = { discovered: [], missions: [], quizzes: [] };
 
 /** The field notebook lives on this device for now; losing it only loses green dots. */
@@ -45,7 +47,7 @@ function useNotebook() {
       // private window, blocked storage: start empty
     }
   }, []);
-  const add = React.useCallback((key: keyof Notebook, id: SiteId) => {
+  const add = React.useCallback((key: keyof Notebook, id: EquipmentType) => {
     setNotebook((current) => {
       if (current[key].includes(id)) return current;
       const next = { ...current, [key]: [...current[key], id] };
@@ -64,8 +66,11 @@ function useNotebook() {
 export default function TerrainPage() {
   const input = React.useMemo(() => createPlayerInput(), []);
   const tracker = React.useMemo<PlayerTracker>(() => ({ x: SPAWN.x, z: SPAWN.z, heading: SPAWN.rotation }), []);
-  const [near, setNear] = React.useState<SiteId | null>(null);
-  const [open, setOpen] = React.useState<SiteId | null>(null);
+  const [near, setNear] = React.useState<string | null>(null);
+  const [open, setOpen] = React.useState<EquipmentType | null>(null);
+  // On by default: seeing the networks is what the lab is for.
+  const [networks, setNetworks] = React.useState(true);
+  const [labels, setLabels] = React.useState(true);
   const [view, setView] = React.useState<'third' | 'first'>('third');
   const [beam, setBeam] = React.useState<'unknown' | 'up' | 'down'>('unknown');
   const { notebook, add } = useNotebook();
@@ -93,9 +98,11 @@ export default function TerrainPage() {
   );
 
   const onInteract = React.useCallback(
-    (id: SiteId) => {
-      setOpen(id);
-      add('discovered', id);
+    (id: string) => {
+      const equipment = equipmentById(id);
+      if (!equipment) return;
+      setOpen(equipment.type);
+      add('discovered', equipment.type);
     },
     [add],
   );
@@ -114,6 +121,8 @@ export default function TerrainPage() {
           near={near}
           discovered={discovered}
           beam={beam}
+          networks={networks}
+          labels={labels}
           onNear={setNear}
           onInteract={onInteract}
         />
@@ -127,6 +136,10 @@ export default function TerrainPage() {
           view={view}
           discovered={discovered}
           mastered={mastered}
+          networks={networks}
+          labels={labels}
+          onToggleNetworks={() => setNetworks((v) => !v)}
+          onToggleLabels={() => setLabels((v) => !v)}
           onToggleView={() => setView((v) => (v === 'third' ? 'first' : 'third'))}
         />
       )}
