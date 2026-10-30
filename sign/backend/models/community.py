@@ -40,6 +40,10 @@ class Question(Base):
     score: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     answer_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     view_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
+    # Taps on "Partager sur WhatsApp": WhatsApp never says whether the message
+    # was actually sent, so this counts the intent, once per member per hour.
+    share_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
+    comment_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     accepted_answer_id: Mapped[int | None] = mapped_column(
         sa.ForeignKey('answer.id', ondelete='SET NULL', use_alter=True), init=False, default=None
     )
@@ -66,8 +70,32 @@ class Answer(Base):
     teacher_endorsed: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0')
     # "🙏 Merci" from readers, separate from the score: thanking is not judging.
     thanks_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
+    comment_count: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     is_hidden: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0', index=True)
     edited_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), init=False, default=None)
+
+    author: Mapped['User'] = relationship(init=False, lazy='joined')
+
+
+class Comment(Base):
+    """A short remark under a question or an answer ("tu as oublié le facteur 2").
+
+    Not an answer: no votes, no reputation. ``target_type`` is 'question' or
+    'answer'; ``question_id`` is kept on both so a question's thread and its
+    deletion need no join through answers.
+    """
+
+    __tablename__ = 'comment'
+    __table_args__ = (sa.Index('ix_comment_target', 'target_type', 'target_id'),)
+
+    id: Mapped[id_key] = mapped_column(init=False)
+    x_id: Mapped[str] = mapped_column(sa.String(32), init=False, unique=True, default=get_id)
+    question_id: Mapped[int] = mapped_column(sa.ForeignKey('question.id', ondelete='CASCADE'), index=True)
+    target_type: Mapped[str] = mapped_column(sa.String(20))  # 'question' | 'answer'
+    target_id: Mapped[int] = mapped_column(sa.Integer)
+    author_id: Mapped[int] = mapped_column(sa.ForeignKey('user.id', ondelete='CASCADE'), index=True)
+    body: Mapped[str] = mapped_column(sa.String(600))
+    is_hidden: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0', index=True)
 
     author: Mapped['User'] = relationship(init=False, lazy='joined')
 
@@ -140,7 +168,8 @@ class Notification(Base):
     """Something happened to one of the member's posts.
 
     ``kind``: 'answer' (new answer to my question), 'accepted' (my answer was
-    chosen), 'endorsed' (a teacher validated my answer), 'thanks'.
+    chosen), 'endorsed' (a teacher validated my answer), 'thanks', 'comment'
+    (a comment on my question or answer).
     """
 
     __tablename__ = 'notification'

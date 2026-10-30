@@ -437,48 +437,72 @@ export interface CommunityAuthor {
   is_teacher: boolean;
 }
 
-export interface QuestionSummary {
-  x_id: string;
-  title: string;
-  excerpt: string;
-  filiere: string;
-  subject: string | null;
-  tags: string[];
-  score: number;
-  answer_count: number;
-  view_count: number;
-  has_accepted: boolean;
-  created_time: string;
-  author: CommunityAuthor;
+/** Who found a post useful: the latest names, and how many (score is net of 👎). */
+export interface Likes {
+  likers: string[];
+  like_count: number;
 }
 
-export interface AnswerDetail {
+export interface AnswerPreview extends Likes {
   x_id: string;
-  body: string;
+  excerpt: string;
   score: number;
   is_accepted: boolean;
   teacher_endorsed: boolean;
   thanks_count: number;
+  comment_count: number;
   created_time: string;
-  edited: boolean;
   author: CommunityAuthor;
   my_vote: number;
   my_thanks: boolean;
   is_mine: boolean;
 }
 
-export interface QuestionDetail extends QuestionSummary {
+export interface AnswerDetail extends AnswerPreview {
   body: string;
-  image_url: string | null;
   edited: boolean;
+}
+
+export interface QuestionSummary extends Likes {
+  x_id: string;
+  title: string;
+  excerpt: string;
+  filiere: string;
+  subject: string | null;
+  tags: string[];
+  image_url: string | null;
+  score: number;
+  answer_count: number;
+  view_count: number;
+  share_count: number;
+  comment_count: number;
+  has_accepted: boolean;
+  created_time: string;
+  author: CommunityAuthor;
   my_vote: number;
   is_mine: boolean;
+  top_answer: AnswerPreview | null;
+}
+
+export interface QuestionDetail extends QuestionSummary {
+  body: string;
+  edited: boolean;
   answers: AnswerDetail[];
+}
+
+export type PostType = 'question' | 'answer';
+
+export interface CommentItem {
+  x_id: string;
+  body: string;
+  created_time: string;
+  author: CommunityAuthor;
+  is_mine: boolean;
 }
 
 export interface NotificationItem {
   x_id: string;
-  kind: 'answer' | 'accepted' | 'endorsed' | 'thanks';
+  kind: 'answer' | 'accepted' | 'endorsed' | 'thanks' | 'comment';
   actor: string;
   question_x_id: string;
   question_title: string;
@@ -579,7 +603,7 @@ export interface CommunityMeta {
 export type ReportReason = 'spam' | 'offensive' | 'off_topic' | 'plagiarism' | 'copyright' | 'broken_link' | 'other';
 
 export interface ReportQueueItem {
-  target_type: 'question' | 'answer' | 'resource';
+  target_type: 'question' | 'answer' | 'resource' | 'comment';
   target_x_id: string;
   question_x_id: string | null;
   preview: string;

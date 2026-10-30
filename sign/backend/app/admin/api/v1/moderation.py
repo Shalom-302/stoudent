@@ -15,13 +15,14 @@ from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.roles import DependsAdmin
 from backend.database.db_postgres import async_db_session
 from backend.models import User
-from backend.models.community import Answer, Question, Report, Resource
+from backend.app.client.service.community_service import _comment_count_changed
+from backend.models.community import Answer, Comment, Question, Report, Resource
 
 router = APIRouter(prefix='/moderation', tags=['Moderation'])
 
 XIdPath = Annotated[str, Path(min_length=8, max_length=32, pattern=r'^[a-z0-9]+$')]
-TargetType = Literal['question', 'answer', 'resource']
-_MODELS = {'question': Question, 'answer': Answer, 'resource': Resource}
+TargetType = Literal['question', 'answer', 'resource', 'comment']
+_MODELS = {'question': Question, 'answer': Answer, 'resource': Resource, 'comment': Comment}
 
 
 class ResolveReportParam(SchemaBase):
@@ -35,7 +36,7 @@ def _preview(target) -> tuple[str, str | None]:
     """(text shown in the queue, question x_id to link to)."""
     if isinstance(target, Question):
         return target.title, target.x_id
-    if isinstance(target, Answer):
+    if isinstance(target, (Answer, Comment)):
         return ' '.join(target.body.split())[:200], None
     return f'{target.title} — {target.url}', None
 
@@ -75,7 +76,7 @@ async def list_reports(
                 continue
             author = await db.get(User, target.author_id)
             text, question_x_id = _preview(target)
-            if isinstance(target, Answer):
+            if isinstance(target, (Answer, Comment)):
                 parent = await db.get(Question, target.question_id)
                 question_x_id = parent.x_id if parent else None
             items.append(
@@ -109,12 +110,16 @@ async def resolve(request: Request, target_type: TargetType, x_id: XIdPath, obj:
         target = (await db.execute(select(model).where(model.x_id == x_id))).unique().scalars().first()
         if target is None:
             raise errors.NotFoundError(msg='Contenu introuvable.')
+        was_hidden = target.is_hidden
         if obj.action == 'hide':
             target.is_hidden = True
         else:
             # Restoring, or dismissing reports judged unfounded, undoes an
             # automatic hide triggered by those reports.
             target.is_hidden = False
+        if isinstance(target, Comment) and was_hidden != target.is_hidden:
+            # The counter under the post counts visible comments only.
+            await _comment_count_changed(db, target, -1 if target.is_hidden else 1)
         reports = (
             await db.execute(
                 select(Report).where(

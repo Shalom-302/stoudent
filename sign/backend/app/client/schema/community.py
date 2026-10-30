@@ -61,6 +61,20 @@ class CreateAnswerParam(SchemaBase):
     body: str = Field(min_length=20, max_length=20_000)
 
 
+class CreateCommentParam(SchemaBase):
+    target_type: Literal['question', 'answer']
+    target_x_id: str = Field(min_length=8, max_length=32)
+    body: str = Field(min_length=2, max_length=600)
+
+    @field_validator('body')
+    @classmethod
+    def _strip(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 2:
+            raise ValueError('Commentaire trop court.')
+        return v
+
+
 class VoteParam(SchemaBase):
     target_type: Literal['question', 'answer']
     target_x_id: str = Field(min_length=8, max_length=32)
@@ -95,7 +109,7 @@ ReportReason = Literal['spam', 'offensive', 'off_topic', 'plagiarism', 'copyrigh
 
 
 class CreateReportParam(SchemaBase):
-    target_type: Literal['question', 'answer', 'resource']
+    target_type: Literal['question', 'answer', 'resource', 'comment']
     target_x_id: str = Field(min_length=8, max_length=32)
     reason: ReportReason
     details: str | None = Field(default=None, max_length=500)
@@ -109,19 +123,30 @@ class AuthorDetail(SchemaBase):
     is_teacher: bool = False
 
 
-class AnswerDetail(SchemaBase):
+class AnswerPreview(SchemaBase):
+    """An answer as the feed shows it under its question: an extract."""
+
     x_id: str
-    body: str
+    excerpt: str
     score: int
     is_accepted: bool
     teacher_endorsed: bool
     thanks_count: int = 0
+    comment_count: int = 0
     created_time: datetime
-    edited: bool = False
     author: AuthorDetail
+    # Up to three pseudos of members who found it useful, latest first, and
+    # how many did (the score is net of downvotes).
+    likers: list[str] = []
+    like_count: int = 0
     my_vote: int = 0
     my_thanks: bool = False
     is_mine: bool = False
+
+
+class AnswerDetail(AnswerPreview):
+    body: str
+    edited: bool = False
 
 
 class QuestionSummary(SchemaBase):
@@ -131,21 +156,35 @@ class QuestionSummary(SchemaBase):
     filiere: str
     subject: str | None = None
     tags: list[str] = []
+    image_url: str | None = None
     score: int
     answer_count: int
     view_count: int
+    share_count: int = 0
+    comment_count: int = 0
     has_accepted: bool
     created_time: datetime
     author: AuthorDetail
+    likers: list[str] = []
+    like_count: int = 0
+    my_vote: int = 0
+    is_mine: bool = False
+    # The accepted answer, else the best rated: read without opening the page.
+    top_answer: AnswerPreview | None = None
 
 
 class QuestionDetail(QuestionSummary):
     body: str
-    image_url: str | None = None
     edited: bool = False
-    my_vote: int = 0
-    is_mine: bool = False
     answers: list[AnswerDetail] = []
+
+
+class CommentDetail(SchemaBase):
+    x_id: str
+    body: str
+    created_time: datetime
+    author: AuthorDetail
+    is_mine: bool = False
 
 
 class ResourceDetail(SchemaBase):

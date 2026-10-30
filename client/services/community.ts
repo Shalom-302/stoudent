@@ -1,8 +1,11 @@
 import { api, apiUpload } from '@/lib/api';
 import type {
+  CommentItem,
+  CommunityAuthor,
   CommunityMeta,
   NotificationItem,
   Paged,
+  PostType,
   QuestionDetail,
   QuestionSummary,
   ReportReason,
@@ -110,6 +113,20 @@ export const communityService = {
       value,
     }),
 
+  likers: (targetType: PostType, xId: string) =>
+    api.get<{ total: number; items: CommunityAuthor[] }>(`/community/likers/${targetType}/${xId}`),
+  /** Counts a tap on "Partager" (once per member per hour); visitors too. */
+  share: (questionXId: string) => api.post<{ share_count: number }>(`/community/questions/${questionXId}/share`),
+  comments: (targetType: PostType, xId: string) =>
+    api.get<{ items: CommentItem[] }>(`/community/comments/${targetType}/${xId}`),
+  comment: (targetType: PostType, xId: string, body: string) =>
+    api.post<{ comment: CommentItem; comment_count: number }>('/community/comments', {
+      target_type: targetType,
+      target_x_id: xId,
+      body,
+    }),
+  deleteComment: (xId: string) => api.delete<{ comment_count: number }>(`/community/comments/${xId}`),
+
   resources: (filters: ResourceFilters) => api.get<Paged<ResourceItem>>(`/community/resources${query(filters)}`),
   resourceFacets: (filters: Pick<ResourceFilters, 'filiere' | 'subject' | 'kind'>) =>
     api.get<ResourceFacets>(`/community/resources/facets${query(filters)}`),
@@ -121,7 +138,7 @@ export const communityService = {
     api.post<{ x_id: string; status: string }>('/community/resources', payload),
 
   report: (
-    targetType: 'question' | 'answer' | 'resource',
+    targetType: 'question' | 'answer' | 'resource' | 'comment',
     targetXId: string,
     reason: ReportReason,
     details?: string,

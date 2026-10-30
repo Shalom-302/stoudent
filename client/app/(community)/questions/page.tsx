@@ -1,15 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, MessageSquare, Plus, Search } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
 
-import { AuthorLine, FiliereChip, TagChip } from '@/components/community/parts';
+import { FeedCard } from '@/components/community/feed-card';
+import { TagChip } from '@/components/community/parts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/features/auth/auth-provider';
 import { cn } from '@/lib/utils';
 import { communityService, type QuestionSort } from '@/services/community';
 
@@ -24,6 +26,8 @@ function Feed() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const filters = {
     filiere: params.get('filiere') ?? undefined,
@@ -47,8 +51,9 @@ function Feed() {
   };
 
   const meta = useQuery({ queryKey: ['community', 'meta'], queryFn: communityService.meta, staleTime: 5 * 60_000 });
+  // The viewer's votes are in the payload, so the key includes who asks.
   const feed = useQuery({
-    queryKey: ['community', 'questions', filters],
+    queryKey: ['community', 'questions', filters, user?.x_id ?? 'anon'],
     queryFn: () => communityService.questions(filters),
   });
 
@@ -138,62 +143,35 @@ function Feed() {
           )}
         </div>
 
-        <ul className="mt-6 divide-y divide-ink-100 rounded-2xl border border-ink-200">
+        <div className="mt-6 space-y-4">
           {feed.isLoading &&
-            Array.from({ length: 4 }).map((_, i) => (
-              <li key={i} className="p-5">
-                <Skeleton className="h-5 w-2/3" />
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-ink-200 p-5">
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="mt-4 h-5 w-2/3" />
                 <Skeleton className="mt-2 h-4 w-full" />
-              </li>
+                <Skeleton className="mt-4 h-8 w-1/2" />
+              </div>
             ))}
-          {feed.isError && <li className="p-5 text-sm text-red-700">{(feed.error as Error).message}</li>}
+          {feed.isError && <p className="rounded-2xl border border-ink-200 p-5 text-sm text-red-700">{(feed.error as Error).message}</p>}
           {feed.data?.items.length === 0 && (
-            <li className="p-10 text-center">
+            <div className="rounded-2xl border border-ink-200 p-10 text-center">
               <p className="font-display text-lg font-semibold">Aucune question ici pour l’instant.</p>
               <p className="mt-1 text-sm text-ink-500">Soyez le premier : posez la vôtre.</p>
-            </li>
+            </div>
           )}
           {feed.data?.items.map((q) => (
-            <li key={q.x_id} className="flex gap-4 p-5 transition-colors hover:bg-accent-50/50">
-              <div className="hidden w-20 shrink-0 flex-col items-end gap-1 text-xs text-ink-500 sm:flex">
-                <span>
-                  <b className="text-ink-900">{q.score}</b> votes
-                </span>
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5',
-                    q.has_accepted
-                      ? 'bg-success text-white'
-                      : q.answer_count
-                        ? 'border border-success text-success'
-                        : '',
-                  )}
-                >
-                  {q.has_accepted ? <CheckCircle2 className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
-                  {q.answer_count}
-                </span>
-                <span>{q.view_count} vue{q.view_count > 1 ? 's' : ''}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/questions/${q.x_id}`}
-                  className="font-display text-lg font-semibold leading-snug text-ink-900 hover:underline"
-                >
-                  {q.title}
-                </Link>
-                <p className="mt-1 line-clamp-2 text-sm text-ink-500">{q.excerpt}</p>
-                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <FiliereChip filiere={q.filiere} />
-                  {q.subject && <span className="text-[11px] text-ink-500">{q.subject}</span>}
-                  {q.tags.map((t) => (
-                    <TagChip key={t} tag={t} onClick={() => setParam({ tag: t })} />
-                  ))}
-                </div>
-                <AuthorLine author={q.author} time={q.created_time} className="mt-2" />
-              </div>
-            </li>
+            <FeedCard
+              key={q.x_id}
+              question={q}
+              onTag={(t) => setParam({ tag: t })}
+              onAnswered={() => void queryClient.invalidateQueries({ queryKey: ['community', 'questions'] })}
+            />
           ))}
-        </ul>
+        </div>
 
         {feed.data && feed.data.total_pages > 1 && (
           <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Pagination">

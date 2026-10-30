@@ -10,7 +10,9 @@ from fastapi.responses import Response
 from fastapi_limiter.depends import RateLimiter
 
 from backend.app.client.schema.community import (
+    CommentDetail,
     CreateAnswerParam,
+    CreateCommentParam,
     CreateQuestionParam,
     CreateReportParam,
     CreateResourceParam,
@@ -63,7 +65,8 @@ async def list_questions(
     size: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> ResponseModel:
     data = await community_service.list_questions(
-        filiere=filiere, subject=subject, tag=tag, q=q, sort=sort, page=page, size=size
+        filiere=filiere, subject=subject, tag=tag, q=q, sort=sort, page=page, size=size,
+        viewer_id=_viewer_id(request),
     )
     data['items'] = [QuestionSummary(**item) for item in data['items']]
     return response_base.success(request=request, data=data)
@@ -204,6 +207,51 @@ async def vote(request: Request, obj: VoteParam) -> ResponseModel:
     return response_base.success(request=request, data=data)
 
 
+PostType = Literal['question', 'answer']
+
+
+@router.get('/likers/{target_type}/{x_id}', summary='Members who found a question or an answer useful')
+async def likers(request: Request, target_type: PostType, x_id: XIdPath) -> ResponseModel:
+    data = await community_service.likers(target_type=target_type, x_id=x_id)
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
+    '/questions/{x_id}/share',
+    summary='Count a tap on "Partager" (visitors too)',
+    dependencies=[Depends(RateLimiter(times=60, minutes=10))],
+)
+async def share_question(request: Request, x_id: XIdPath) -> ResponseModel:
+    viewer_id = _viewer_id(request)
+    key = f'u{viewer_id}' if viewer_id else f"ip{getattr(request.state, 'ip', None) or 'unknown'}"
+    data = await community_service.share_question(x_id=x_id, viewer_key=key)
+    return response_base.success(request=request, data=data)
+
+
+@router.get('/comments/{target_type}/{x_id}', summary='Comments under a question or an answer')
+async def list_comments(request: Request, target_type: PostType, x_id: XIdPath) -> ResponseModel:
+    data = await community_service.list_comments(target_type=target_type, x_id=x_id, viewer_id=_viewer_id(request))
+    data['items'] = [CommentDetail(**item) for item in data['items']]
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
+    '/comments',
+    summary='Comment on a question or an answer',
+    dependencies=[DependsJwtAuth, Depends(RateLimiter(times=60, hours=1))],
+)
+async def create_comment(request: Request, obj: CreateCommentParam) -> ResponseModel:
+    data = await community_service.create_comment(user_id=request.user.id, obj=obj)
+    data['comment'] = CommentDetail(**data['comment'])
+    return response_base.success(request=request, data=data)
+
+
+@router.delete('/comments/{x_id}', summary='Delete my comment', dependencies=[DependsJwtAuth])
+async def delete_comment(request: Request, x_id: XIdPath) -> ResponseModel:
+    data = await community_service.delete_comment(x_id=x_id, user_id=request.user.id)
+    return response_base.success(request=request, data=data)
+
+
 Kind = Literal['sujet', 'corrige', 'cours', 'td', 'autre']
 
 
@@ -274,7 +322,7 @@ async def create_resource(request: Request, obj: CreateResourceParam) -> Respons
 
 @router.post(
     '/reports',
-    summary='Report a question, an answer or a resource',
+    summary='Report a question, an answer, a comment or a resource',
     dependencies=[DependsJwtAuth, Depends(RateLimiter(times=20, hours=1))],
 )
 async def report(request: Request, obj: CreateReportParam) -> ResponseModel:

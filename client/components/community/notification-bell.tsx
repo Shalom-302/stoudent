@@ -16,6 +16,7 @@ const TEXT: Record<NotificationItem['kind'], (actor: string) => string> = {
   accepted: () => 'Ta réponse a été choisie comme meilleure réponse',
   endorsed: () => 'Un professeur a validé ta réponse',
   thanks: (actor) => `${actor} t’a dit merci pour ta réponse`,
+  comment: (actor) => `${actor} a commenté ton message`,
 };
 
 /**

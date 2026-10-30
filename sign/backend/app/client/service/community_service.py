@@ -15,6 +15,7 @@ from backend.app.client.service import programme
 from backend.app.client.service.notify_service import add_notification, notify_first_answer
 from backend.app.client.schema.community import (
     CreateAnswerParam,
+    CreateCommentParam,
     CreateQuestionParam,
     CreateReportParam,
     CreateResourceParam,
@@ -26,7 +27,7 @@ from backend.crud.crud_student import student_dao
 from backend.database.db_postgres import async_db_session
 from backend.database.db_redis import redis_client
 from backend.models import StudentProfile, User
-from backend.models.community import Answer, Notification, Question, Report, Resource, Vote
+from backend.models.community import Answer, Comment, Notification, Question, Report, Resource, Vote
 from backend.utils.timezone import timezone
 
 REP_QUESTION_VOTE = 5
@@ -38,6 +39,11 @@ AUTO_HIDE_REPORTS = 3
 EXCERPT_LENGTH = 220
 # A reader counts as one view per question per hour, however often the page refetches.
 VIEW_WINDOW_SECONDS = 3600
+# Same for shares: tapping "Partager" five times is one share.
+SHARE_WINDOW_SECONDS = 3600
+# "Awa, Yao et 12 autres": names shown before the count takes over.
+LIKERS_SHOWN = 3
+LIKERS_PAGE = 100
 
 # Shown in the filters before the community has created its own.
 # The BTS filières STOUDENT opens with (codes; names live in client/lib/community.ts).
@@ -83,13 +89,65 @@ def _author(user: User, profile: StudentProfile | None) -> dict:
     }
 
 
-async def _is_new_view(question_id: int, viewer_key: str) -> bool:
+async def _first_in_window(key: str, seconds: int) -> bool:
     try:
-        return bool(
-            await redis_client.set(f'stoudent:view:{question_id}:{viewer_key}', '1', ex=VIEW_WINDOW_SECONDS, nx=True)
-        )
+        return bool(await redis_client.set(key, '1', ex=seconds, nx=True))
     except Exception:  # noqa: BLE001 - a Redis hiccup must not break reading
         return False
+
+
+async def _is_new_view(question_id: int, viewer_key: str) -> bool:
+    return await _first_in_window(f'stoudent:view:{question_id}:{viewer_key}', VIEW_WINDOW_SECONDS)
+
+
+async def _likers(db, target_type: str, ids: list[int]) -> dict[int, tuple[list[str], int]]:
+    """{target_id: (latest LIKERS_SHOWN pseudos, number of 👍)}.
+
+    The score is net (👍 minus 👎), so the 👍 count is computed here for
+    "Awa, Yao et 12 autres". Downvotes stay anonymous: only 👍 are attributed.
+    """
+    if not ids:
+        return {}
+    rank = func.row_number().over(partition_by=Vote.target_id, order_by=Vote.id.desc()).label('rank')
+    total = func.count().over(partition_by=Vote.target_id).label('total')
+    ranked = (
+        select(Vote.target_id, Vote.user_id, rank, total)
+        .where(Vote.target_type == target_type, Vote.value == 1, Vote.target_id.in_(ids))
+        .subquery()
+    )
+    rows = await db.execute(
+        select(ranked.c.target_id, ranked.c.total, User)
+        .join(User, User.id == ranked.c.user_id)
+        .where(ranked.c.rank <= LIKERS_SHOWN)
+        .order_by(ranked.c.target_id, ranked.c.rank)
+    )
+    result: dict[int, tuple[list[str], int]] = {}
+    for target_id, count, user in rows.unique().all():
+        names, _ = result.get(target_id, ([], 0))
+        names.append(_author(user, None)['pseudo'])
+        result[target_id] = (names, int(count))
+    return result
+
+
+def _likes(likers: dict[int, tuple[list[str], int]], target_id: int) -> dict:
+    names, count = likers.get(target_id, ([], 0))
+    return {'likers': names, 'like_count': count}
+
+
+async def _my_votes(db, viewer_id: int | None, question_ids: list[int], answer_ids: list[int]) -> dict:
+    """{(target_type, target_id): value} for the viewer, 'thanks' rows included."""
+    if not viewer_id or not (question_ids or answer_ids):
+        return {}
+    rows = await db.execute(
+        select(Vote.target_type, Vote.target_id, Vote.value).where(
+            Vote.user_id == viewer_id,
+            or_(
+                (Vote.target_type == 'question') & Vote.target_id.in_(question_ids or [0]),
+                Vote.target_type.in_(('answer', 'thanks')) & Vote.target_id.in_(answer_ids or [0]),
+            ),
+        )
+    )
+    return {(t, i): v for t, i, v in rows.all()}
 
 
 async def _add_reputation(db, user_id: int, delta: int) -> None:
@@ -101,6 +159,20 @@ async def _add_reputation(db, user_id: int, delta: int) -> None:
     # No floor at 0: every delta must be undoable (a withdrawn downvote gives
     # back exactly what it took), which a clamp would break.
     profile.reputation += delta
+
+
+async def _comment_count_changed(db, comment: Comment, delta: int) -> int:
+    """Keep the parent's visible-comment counter in step; returns the new count."""
+    model = Question if comment.target_type == 'question' else Answer
+    count = (
+        await db.execute(
+            update(model)
+            .where(model.id == comment.target_id)
+            .values(comment_count=func.greatest(model.comment_count + delta, 0))
+            .returning(model.comment_count)
+        )
+    ).scalar_one_or_none()
+    return count or 0
 
 
 class CommunityService:
@@ -116,6 +188,7 @@ class CommunityService:
         sort: str,
         page: int,
         size: int,
+        viewer_id: int | None = None,
     ) -> dict:
         async with async_db_session() as db:
             stmt = select(Question).where(Question.is_hidden.is_(False))
@@ -148,9 +221,46 @@ class CommunityService:
                 await db.execute(stmt.order_by(*order).offset((page - 1) * size).limit(size))
             ).unique().scalars().all()
 
-            profiles = await _profiles_by_user(db, {r.author_id for r in rows})
+            question_ids = [r.id for r in rows]
+            # One answer per question: the one the question page puts first.
+            top_answers = (
+                await db.execute(
+                    select(Answer)
+                    .where(Answer.question_id.in_(question_ids or [0]), Answer.is_hidden.is_(False))
+                    .distinct(Answer.question_id)
+                    .order_by(
+                        Answer.question_id,
+                        Answer.is_accepted.desc(),
+                        Answer.teacher_endorsed.desc(),
+                        Answer.score.desc(),
+                        Answer.id,
+                    )
+                )
+            ).unique().scalars().all()
+            top_by_question = {a.question_id: a for a in top_answers}
+            answer_ids = [a.id for a in top_answers]
+
+            profiles = await _profiles_by_user(db, {r.author_id for r in rows} | {a.author_id for a in top_answers})
+            question_likers = await _likers(db, 'question', question_ids)
+            answer_likers = await _likers(db, 'answer', answer_ids)
+            my_votes = await _my_votes(db, viewer_id, question_ids, answer_ids)
+
+            items = []
+            for r in rows:
+                item = CommunityService._summary(r, profiles.get(r.author_id))
+                item.update(
+                    **_likes(question_likers, r.id),
+                    my_vote=my_votes.get(('question', r.id), 0),
+                    is_mine=viewer_id == r.author_id,
+                )
+                top = top_by_question.get(r.id)
+                if top is not None:
+                    item['top_answer'] = CommunityService._answer(
+                        top, profiles.get(top.author_id), answer_likers, my_votes, viewer_id, full=False
+                    )
+                items.append(item)
             return {
-                'items': [CommunityService._summary(r, profiles.get(r.author_id)) for r in rows],
+                'items': items,
                 'total': int(total),
                 'page': page,
                 'size': size,
@@ -166,13 +276,45 @@ class CommunityService:
             'filiere': question.filiere,
             'subject': question.subject,
             'tags': list(question.tags or []),
+            'image_url': question.image_url,
             'score': question.score,
             'answer_count': question.answer_count,
             'view_count': question.view_count,
+            'share_count': question.share_count,
+            'comment_count': question.comment_count,
             'has_accepted': question.accepted_answer_id is not None,
             'created_time': question.created_time,
             'author': _author(question.author, profile),
         }
+
+    @staticmethod
+    def _answer(
+        a: Answer,
+        profile: StudentProfile | None,
+        likers: dict[int, tuple[list[str], int]],
+        my_votes: dict,
+        viewer_id: int | None,
+        *,
+        full: bool,
+    ) -> dict:
+        data = {
+            'x_id': a.x_id,
+            'excerpt': _excerpt(a.body),
+            'score': a.score,
+            'is_accepted': a.is_accepted,
+            'teacher_endorsed': a.teacher_endorsed,
+            'thanks_count': a.thanks_count,
+            'comment_count': a.comment_count,
+            'created_time': a.created_time,
+            'author': _author(a.author, profile),
+            **_likes(likers, a.id),
+            'my_vote': my_votes.get(('answer', a.id), 0),
+            'my_thanks': ('thanks', a.id) in my_votes,
+            'is_mine': viewer_id == a.author_id,
+        }
+        if full:
+            data.update(body=a.body, edited=a.edited_at is not None)
+        return data
 
     @staticmethod
     async def meta() -> dict:
@@ -269,43 +411,22 @@ class CommunityService:
                 )
             ).unique().scalars().all()
 
+            answer_ids = [a.id for a in answers]
             profiles = await _profiles_by_user(db, {question.author_id, *(a.author_id for a in answers)})
-            my_votes: dict[tuple[str, int], int] = {}
-            if viewer_id:
-                rows = await db.execute(
-                    select(Vote.target_type, Vote.target_id, Vote.value).where(
-                        Vote.user_id == viewer_id,
-                        or_(
-                            (Vote.target_type == 'question') & (Vote.target_id == question.id),
-                            Vote.target_type.in_(('answer', 'thanks')) & Vote.target_id.in_([a.id for a in answers] or [0]),
-                        ),
-                    )
-                )
-                my_votes = {(t, i): v for t, i, v in rows.all()}
+            my_votes = await _my_votes(db, viewer_id, [question.id], answer_ids)
+            question_likers = await _likers(db, 'question', [question.id])
+            answer_likers = await _likers(db, 'answer', answer_ids)
 
             data = self._summary(question, profiles.get(question.author_id))
             data['view_count'] = view_count
             data.update(
                 body=question.body,
-                image_url=question.image_url,
                 edited=question.edited_at is not None,
+                **_likes(question_likers, question.id),
                 my_vote=my_votes.get(('question', question.id), 0),
                 is_mine=viewer_id == question.author_id,
                 answers=[
-                    {
-                        'x_id': a.x_id,
-                        'body': a.body,
-                        'score': a.score,
-                        'is_accepted': a.is_accepted,
-                        'teacher_endorsed': a.teacher_endorsed,
-                        'thanks_count': a.thanks_count,
-                        'created_time': a.created_time,
-                        'edited': a.edited_at is not None,
-                        'author': _author(a.author, profiles.get(a.author_id)),
-                        'my_vote': my_votes.get(('answer', a.id), 0),
-                        'my_thanks': ('thanks', a.id) in my_votes,
-                        'is_mine': viewer_id == a.author_id,
-                    }
+                    self._answer(a, profiles.get(a.author_id), answer_likers, my_votes, viewer_id, full=True)
                     for a in answers
                 ],
             )
@@ -451,6 +572,7 @@ class CommunityService:
             await db.execute(
                 delete(Vote).where(Vote.target_type.in_(('answer', 'thanks')), Vote.target_id == answer.id)
             )
+            await db.execute(delete(Comment).where(Comment.target_type == 'answer', Comment.target_id == answer.id))
             question.answer_count = max(question.answer_count - 1, 0)
             await db.delete(answer)
 
@@ -529,6 +651,117 @@ class CommunityService:
             if x_ids:
                 stmt = stmt.where(Notification.x_id.in_(x_ids))
             await db.execute(stmt.values(is_read=True))
+
+    # -- Social: who liked, shares, comments ---------------------------------
+
+    @staticmethod
+    async def _target(db, target_type: str, x_id: str, *, for_update: bool = False) -> Question | Answer:
+        model = Question if target_type == 'question' else Answer
+        stmt = select(model).where(model.x_id == x_id, model.is_hidden.is_(False))
+        if for_update:
+            stmt = stmt.with_for_update(of=model)
+        target = (await db.execute(stmt)).unique().scalars().first()
+        if target is None:
+            raise errors.NotFoundError(msg='Contenu introuvable.')
+        return target
+
+    async def likers(self, *, target_type: str, x_id: str) -> dict:
+        """Everyone who found it useful (👍), latest first. Downvoters stay anonymous."""
+        async with async_db_session() as db:
+            target = await self._target(db, target_type, x_id)
+            where = (Vote.target_type == target_type, Vote.target_id == target.id, Vote.value == 1)
+            total = (await db.execute(select(func.count(Vote.id)).where(*where))).scalar_one()
+            users = (
+                await db.execute(
+                    select(User)
+                    .join(Vote, Vote.user_id == User.id)
+                    .where(*where)
+                    .order_by(Vote.id.desc())
+                    .limit(LIKERS_PAGE)
+                )
+            ).unique().scalars().all()
+            profiles = await _profiles_by_user(db, {u.id for u in users})
+            return {'total': int(total), 'items': [_author(u, profiles.get(u.id)) for u in users]}
+
+    @staticmethod
+    async def share_question(*, x_id: str, viewer_key: str) -> dict:
+        """Count a tap on "Partager", once per member (or address) per hour."""
+        async with async_db_session.begin() as db:
+            question = await CommunityService._get_question(db, x_id)
+            count = question.share_count
+            if await _first_in_window(f'stoudent:share:{question.id}:{viewer_key}', SHARE_WINDOW_SECONDS):
+                count = (
+                    await db.execute(
+                        update(Question)
+                        .where(Question.id == question.id)
+                        .values(share_count=Question.share_count + 1)
+                        .returning(Question.share_count)
+                    )
+                ).scalar_one()
+            return {'share_count': count}
+
+    @staticmethod
+    def _comment(c: Comment, profile: StudentProfile | None, viewer_id: int | None) -> dict:
+        return {
+            'x_id': c.x_id,
+            'body': c.body,
+            'created_time': c.created_time,
+            'author': _author(c.author, profile),
+            'is_mine': viewer_id == c.author_id,
+        }
+
+    async def list_comments(self, *, target_type: str, x_id: str, viewer_id: int | None) -> dict:
+        async with async_db_session() as db:
+            target = await self._target(db, target_type, x_id)
+            comments = (
+                await db.execute(
+                    select(Comment)
+                    .where(
+                        Comment.target_type == target_type,
+                        Comment.target_id == target.id,
+                        Comment.is_hidden.is_(False),
+                    )
+                    .order_by(Comment.id)
+                )
+            ).unique().scalars().all()
+            profiles = await _profiles_by_user(db, {c.author_id for c in comments})
+            return {'items': [self._comment(c, profiles.get(c.author_id), viewer_id) for c in comments]}
+
+    async def create_comment(self, *, user_id: int, obj: CreateCommentParam) -> dict:
+        async with async_db_session.begin() as db:
+            target = await self._target(db, obj.target_type, obj.target_x_id, for_update=True)
+            question = target if isinstance(target, Question) else await db.get(Question, target.question_id)
+            if question is None or question.is_hidden:
+                raise errors.NotFoundError(msg='Contenu introuvable.')
+            comment = Comment(
+                question_id=question.id,
+                target_type=obj.target_type,
+                target_id=target.id,
+                author_id=user_id,
+                body=obj.body,
+            )
+            db.add(comment)
+            target.comment_count += 1
+            actor = await db.get(User, user_id)
+            add_notification(db, user_id=target.author_id, kind='comment', question=question, actor=actor)
+            await db.flush()
+            comment.author = actor
+            profile = await student_dao.get_by_user_id(db, user_id)
+            return {'comment': self._comment(comment, profile, user_id), 'comment_count': target.comment_count}
+
+    @staticmethod
+    async def delete_comment(*, x_id: str, user_id: int) -> dict:
+        async with async_db_session.begin() as db:
+            comment = (
+                await db.execute(select(Comment).where(Comment.x_id == x_id, Comment.is_hidden.is_(False)))
+            ).unique().scalars().first()
+            if comment is None:
+                raise errors.NotFoundError(msg='Commentaire introuvable.')
+            if comment.author_id != user_id:
+                raise errors.ForbiddenError(msg='Seul l’auteur peut supprimer son commentaire.')
+            count = await _comment_count_changed(db, comment, -1)
+            await db.delete(comment)
+            return {'comment_count': count}
 
     # -- Votes --------------------------------------------------------------
 
@@ -842,7 +1075,7 @@ class CommunityService:
 
     @staticmethod
     async def report(*, user_id: int, obj: CreateReportParam) -> dict:
-        model = {'question': Question, 'answer': Answer, 'resource': Resource}[obj.target_type]
+        model = {'question': Question, 'answer': Answer, 'resource': Resource, 'comment': Comment}[obj.target_type]
         async with async_db_session.begin() as db:
             target = (await db.execute(select(model).where(model.x_id == obj.target_x_id))).unique().scalars().first()
             if target is None:
@@ -868,8 +1101,10 @@ class CommunityService:
                     )
                 )
             ).scalar_one()
-            if open_reports >= AUTO_HIDE_REPORTS:
+            if open_reports >= AUTO_HIDE_REPORTS and not target.is_hidden:
                 target.is_hidden = True
+                if isinstance(target, Comment):
+                    await _comment_count_changed(db, target, -1)
             return {'hidden': target.is_hidden}
 
 

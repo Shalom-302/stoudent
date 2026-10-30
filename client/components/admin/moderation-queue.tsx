@@ -19,6 +19,7 @@ const TYPE_LABEL: Record<ReportQueueItem['target_type'], string> = {
   question: 'Question',
   answer: 'Réponse',
   resource: 'Ressource',
+  comment: 'Commentaire',
 };
 const REASON_LABEL = Object.fromEntries(REPORT_REASONS.map((r) => [r.value, r.label]));
 const STATUSES = [

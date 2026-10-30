@@ -3,7 +3,7 @@
 > Le mini réseau social d'entraide des étudiants **de toutes les filières du BTS**.
 > Concept : `STOUDENT_note_de_concept_MVP.docx`. Backed by Kortex.
 
-Point d'avancement au **28 octobre 2026**. En production sur
+Point d'avancement au **30 octobre 2026**. En production sur
 **https://stoudent.kortex.sbs** (Dokploy, images GHCR). Ce document décrit ce
 qui tourne, comment c'est déployé, ce qui reste à faire et les décisions prises.
 
@@ -42,7 +42,18 @@ Le périmètre MVP de la note de concept est couvert, ressources comprises.
 
 ### Communauté
 
-- **Fil de questions** : filtres filière, matière et tag, recherche plein texte
+- **Fil d'actualité façon réseau social** (V2.0, 30 octobre) : chaque question
+  est une carte avec l'auteur, la photo de l'exercice, **qui a aimé**
+  (« Toi, Awa et 12 autres trouvent ça utile », liste complète au clic ; les
+  👎 restent anonymes), les compteurs réponses · commentaires · partages · vues,
+  et la **meilleure réponse déjà lisible** dessous. On **aime, commente, répond
+  et partage sans quitter le fil**.
+- **Commentaires** courts (600 caractères) sous une question ou une réponse :
+  pas de vote ni de réputation, notification à l'auteur, suppression par son
+  auteur, signalables (masqués après 3 signalements, modération SignManager).
+- **Partages** : chaque appui sur « Partager sur WhatsApp » est compté, une fois
+  par membre (ou adresse) et par heure ; WhatsApp ne dit pas si le message part.
+- **Filtres** : filière, matière et tag, recherche plein texte
   en français, tris (récentes, mieux notées, actives, sans réponse). Lecture
   publique, écriture connectée.
 - **Poser une question** : titre, détail, filière, matière, tags, **photo de
@@ -54,7 +65,6 @@ Le périmètre MVP de la note de concept est couvert, ressources comprises.
 - **Modifier / supprimer** : sa question (tant qu'elle n'a pas de réponse pour
   la suppression), sa réponse (la réputation gagnée est retirée). Mention
   « modifiée ».
-- **Partager sur WhatsApp** sur chaque question.
 - **Réputation** : +5 par 👍 sur une question, +10 sur une réponse, +15 pour la
   meilleure réponse, +2 par Merci ; un vote négatif retire 1 ou 2. Toutes les
   variations sont réversibles.
@@ -277,6 +287,8 @@ Tous reproductibles, lancés avant chaque push :
 | Suite | Contenu | Dernier passage |
 |---|---|---|
 | API communauté | inscription, questions, réponses, votes, réputation, signalements | 34/34 |
+| API fil social (V2.0) | qui a aimé (3 noms, total, 👎 anonymes), meilleure réponse dans le fil, partages dédoublonnés, commentaires (droits, notifications, signalement, compteurs), suppression d'une réponse commentée | 39/39 |
+| Navigateur, fil social | visiteur et membre, ordinateur et téléphone 390 px : aimer, voir qui a aimé, commenter, répondre et partager depuis le fil, page question | 15/15, 0 erreur console |
 | API bibliothèque | programme officiel (33 filières, épreuves, coefficients), rayons par épreuve et rayons partagés, anciens codes, facettes, recherche, visites, propositions, validation admin, signalement droits d'auteur | 30/30 |
 | Annonces WhatsApp | faux serveur gowa : consentement seul, exclusions, délais, pause, arrêt sur échecs, un envoi à la fois ; API admin | 11/11 + 10/10 |
 | Bibliothèque, base neuve | migrations + `seed-library` avant la création des tables par l'API ; 2ᵉ passage sans doublon | OK |
@@ -313,7 +325,7 @@ conversion de chemins de Git Bash (`MSYS_NO_PATHCONV=1`).
 - [ ] Classement des entraideurs par filière
 - [ ] Fil « Ma filière » par défaut, questions sans réponse en premier
 - [ ] Suivre une question
-- [ ] Commentaires courts sous une réponse
+- [x] Commentaires courts sous une question ou une réponse (V2.0)
 - [ ] Référencement Google (pages de questions rendues côté serveur)
 - [ ] Bibliothèque : compléter les filières sans documents propres
       (agriculture, cosmétologie, géomètre…) et les épreuves vides (EPP)
@@ -333,6 +345,7 @@ vérifiés (hébergés par STOUDENT, avec leur accord).
 | Sujet | Fichier |
 |---|---|
 | Questions, réponses, votes, merci | `sign/backend/app/client/service/community_service.py` |
+| Fil social (carte, qui a aimé, commentaires) | `client/components/community/feed-card.tsx`, `client/components/community/social.tsx` |
 | Notifications et WhatsApp | `sign/backend/app/client/service/notify_service.py` |
 | Codes WhatsApp (gowa) | `sign/backend/app/client/service/otp_service.py` |
 | Photos | `sign/backend/app/client/service/upload_service.py` |

@@ -19,13 +19,14 @@ import {
   VoteControl,
 } from '@/components/community/parts';
 import { FormattingHint } from '@/components/community/question-form';
+import { CommentsThread, CommentToggle, LikersLine, useLikes } from '@/components/community/social';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/auth-provider';
 import { cn } from '@/lib/utils';
 import { communityService } from '@/services/community';
-import type { AnswerDetail, QuestionDetail } from '@/types';
+import type { AnswerDetail, PostType, QuestionDetail } from '@/types';
 
 export default function QuestionPage() {
   const { id } = useParams<{ id: string }>();
@@ -128,10 +129,9 @@ export default function QuestionPage() {
             />
           </a>
         )}
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <VoteControl targetType="question" targetXId={q.x_id} score={q.score} myVote={q.my_vote} disabled={q.is_mine} />
-          <ShareWhatsAppButton title={q.title} path={`/questions/${q.x_id}`} />
-        </div>
+        <SocialBar targetType="question" post={q} disabled={q.is_mine}>
+          <ShareWhatsAppButton title={q.title} questionXId={q.x_id} count={q.share_count} />
+        </SocialBar>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-3">
           <AuthorLine author={q.author} time={q.created_time} />
           <div className="flex items-center gap-4">
@@ -251,7 +251,10 @@ function AnswerItem({
   });
 
   return (
-    <li className={cn('rounded-2xl border p-5', a.is_accepted ? 'border-success bg-success/5' : 'border-ink-200')}>
+    <li
+      id={`answer-${a.x_id}`}
+      className={cn('scroll-mt-20 rounded-2xl border p-5', a.is_accepted ? 'border-success bg-success/5' : 'border-ink-200')}
+    >
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {a.is_accepted && (
           <span className="inline-flex items-center gap-1 rounded-md bg-success px-2 py-0.5 text-[11px] font-semibold text-white">
@@ -288,8 +291,7 @@ function AnswerItem({
         <PostBody text={a.body} />
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <VoteControl targetType="answer" targetXId={a.x_id} score={a.score} myVote={a.my_vote} disabled={a.is_mine} />
+      <SocialBar targetType="answer" post={a} disabled={a.is_mine}>
         <ThanksButton answerXId={a.x_id} count={a.thanks_count} thanked={a.my_thanks} disabled={a.is_mine} />
         {canAccept && (
           <button
@@ -311,7 +313,7 @@ function AnswerItem({
             <GraduationCap className="h-4 w-4" /> {a.teacher_endorsed ? 'Retirer la validation' : 'Valider (prof)'}
           </button>
         )}
-      </div>
+      </SocialBar>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-3">
         <AuthorLine author={a.author} time={a.created_time} />
@@ -340,5 +342,45 @@ function AnswerItem({
         </div>
       </div>
     </li>
+  );
+}
+
+/**
+ * 👍 Utile, who liked it, 💬 comments, plus the post's own buttons: the same
+ * social bar as in the feed.
+ */
+function SocialBar({
+  targetType,
+  post,
+  disabled,
+  children,
+}: {
+  targetType: PostType;
+  post: QuestionDetail | AnswerDetail;
+  disabled: boolean;
+  children?: React.ReactNode;
+}) {
+  const likes = useLikes(post);
+  const [comments, setComments] = React.useState(post.comment_count);
+  const [open, setOpen] = React.useState(false);
+  React.useEffect(() => setComments(post.comment_count), [post.comment_count]);
+
+  return (
+    <div className="mt-5">
+      <LikersLine targetType={targetType} xId={post.x_id} likers={likes.likers} likeCount={likes.likeCount} me={likes.me} />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <VoteControl
+          targetType={targetType}
+          targetXId={post.x_id}
+          score={likes.score}
+          myVote={likes.myVote}
+          disabled={disabled}
+          onChange={likes.onVote}
+        />
+        <CommentToggle count={comments} open={open} onClick={() => setOpen((v) => !v)} />
+        {children}
+      </div>
+      {open && <CommentsThread targetType={targetType} xId={post.x_id} onCount={setComments} />}
+    </div>
   );
 }
