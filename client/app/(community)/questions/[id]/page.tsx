@@ -18,7 +18,7 @@ import {
   useRequireAuth,
   VoteControl,
 } from '@/components/community/parts';
-import { FormattingHint } from '@/components/community/question-form';
+import { FormattingHint, PhotoPicker } from '@/components/community/question-form';
 import { CommentsThread, CommentToggle, LikersLine, useLikes } from '@/components/community/social';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
@@ -42,10 +42,13 @@ export default function QuestionPage() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['community', 'question', id] });
 
   const [answer, setAnswer] = React.useState('');
+  const [answerImage, setAnswerImage] = React.useState<string | undefined>();
+  const [uploading, setUploading] = React.useState(false);
   const post = useMutation({
-    mutationFn: () => communityService.answer(id, answer.trim()),
+    mutationFn: () => communityService.answer(id, answer.trim(), answerImage),
     onSuccess: () => {
       setAnswer('');
+      setAnswerImage(undefined);
       toast.success('Réponse publiée. Merci pour votre aide !');
       void refresh();
     },
@@ -190,6 +193,7 @@ export default function QuestionPage() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!requireAuth()) return;
+            if (uploading) return toast.info('Patientez, la photo est en cours d’envoi.');
             if (answer.trim().length < 20) return toast.error('Une réponse fait au moins 20 caractères.');
             post.mutate();
           }}
@@ -203,8 +207,13 @@ export default function QuestionPage() {
             aria-label="Votre réponse"
           />
           <FormattingHint />
-          <div className="flex justify-end">
-            <Button type="submit" disabled={post.isPending}>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            {user ? (
+              <PhotoPicker value={answerImage} onChange={setAnswerImage} onUploading={setUploading} compact />
+            ) : (
+              <span />
+            )}
+            <Button type="submit" disabled={post.isPending || uploading}>
               {post.isPending ? 'Publication…' : 'Publier ma réponse'}
             </Button>
           </div>
@@ -231,9 +240,10 @@ function AnswerItem({
 }) {
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(a.body);
+  const [draftImage, setDraftImage] = React.useState<string | undefined>(a.image_url ?? undefined);
 
   const save = useMutation({
-    mutationFn: () => communityService.editAnswer(a.x_id, draft.trim()),
+    mutationFn: () => communityService.editAnswer(a.x_id, draft.trim(), draftImage),
     onSuccess: () => {
       setEditing(false);
       toast.success('Réponse modifiée.');
@@ -278,6 +288,7 @@ function AnswerItem({
           }}
         >
           <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={6} maxLength={20000} aria-label="Modifier la réponse" />
+          <PhotoPicker value={draftImage} onChange={setDraftImage} compact />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
               Annuler
@@ -288,7 +299,19 @@ function AnswerItem({
           </div>
         </form>
       ) : (
-        <PostBody text={a.body} />
+        <>
+          <PostBody text={a.body} />
+          {a.image_url && (
+            <a href={a.image_url} target="_blank" rel="noopener noreferrer" className="mt-3 block">
+              {/* eslint-disable-next-line @next/next/no-img-element -- same-origin upload */}
+              <img
+                src={a.image_url}
+                alt="Photo jointe à la réponse"
+                className="max-h-[28rem] rounded-xl border border-ink-200 object-contain"
+              />
+            </a>
+          )}
+        </>
       )}
 
       <SocialBar targetType="answer" post={a} disabled={a.is_mine}>
@@ -324,6 +347,7 @@ function AnswerItem({
               <button
                 onClick={() => {
                   setDraft(a.body);
+                  setDraftImage(a.image_url ?? undefined);
                   setEditing(true);
                 }}
                 className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-ink-900"

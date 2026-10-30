@@ -15,7 +15,7 @@ import {
   useRequireAuth,
   VoteControl,
 } from '@/components/community/parts';
-import { FormattingHint } from '@/components/community/question-form';
+import { FormattingHint, PhotoPicker } from '@/components/community/question-form';
 import { Avatar, CommentsThread, CommentToggle, LikersLine, useLikes } from '@/components/community/social';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
@@ -210,6 +210,17 @@ function TopAnswer({ answer: a, href, answerCount }: { answer: AnswerPreview; hr
       <div className="mt-2 text-sm [&_p]:text-sm">
         <PostBody text={a.excerpt} />
       </div>
+      {a.image_url && (
+        <Link href={`${href}#answer-${a.x_id}`} className="mt-2 block">
+          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin upload */}
+          <img
+            src={a.image_url}
+            alt="Photo jointe à la réponse"
+            loading="lazy"
+            className="max-h-56 rounded-lg border border-ink-100 bg-white object-contain"
+          />
+        </Link>
+      )}
       <Link href={`${href}#answer-${a.x_id}`} className="mt-1 inline-block text-xs font-semibold text-ink-900 underline underline-offset-4">
         {answerCount > 1 ? `Lire la suite · voir les ${answerCount} réponses` : 'Lire la suite'}
       </Link>
@@ -246,10 +257,13 @@ export function AnswerComposer({
 }) {
   const { user } = useAuth();
   const [body, setBody] = React.useState('');
+  const [imageUrl, setImageUrl] = React.useState<string | undefined>();
+  const [uploading, setUploading] = React.useState(false);
   const post = useMutation({
-    mutationFn: () => communityService.answer(questionXId, body.trim()),
+    mutationFn: () => communityService.answer(questionXId, body.trim(), imageUrl),
     onSuccess: () => {
       setBody('');
+      setImageUrl(undefined);
       toast.success('Réponse publiée. Merci pour ton aide !');
       onPosted();
     },
@@ -261,6 +275,7 @@ export function AnswerComposer({
       className="mt-3 space-y-2 rounded-xl border border-ink-200 p-3"
       onSubmit={(e) => {
         e.preventDefault();
+        if (uploading) return toast.info('Patiente, la photo est en cours d’envoi.');
         if (body.trim().length < 20) return toast.error('Une réponse fait au moins 20 caractères.');
         post.mutate();
       }}
@@ -275,13 +290,16 @@ export function AnswerComposer({
         aria-label="Ta réponse"
       />
       <FormattingHint />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          Annuler
-        </Button>
-        <Button type="submit" size="sm" disabled={post.isPending}>
-          {post.isPending ? 'Publication…' : 'Publier'}
-        </Button>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <PhotoPicker value={imageUrl} onChange={setImageUrl} onUploading={setUploading} compact />
+        <div className="ml-auto flex gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+            Annuler
+          </Button>
+          <Button type="submit" size="sm" disabled={post.isPending || uploading}>
+            {post.isPending ? 'Publication…' : 'Publier'}
+          </Button>
+        </div>
       </div>
     </form>
   );

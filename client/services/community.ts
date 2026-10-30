@@ -91,11 +91,12 @@ export const communityService = {
     return apiUpload<{ image_url: string }>('/community/uploads', form);
   },
 
-  answer: (questionXId: string, body: string) =>
-    api.post<{ x_id: string }>(`/community/questions/${questionXId}/answers`, { body }),
+  answer: (questionXId: string, body: string, imageUrl?: string) =>
+    api.post<{ x_id: string }>(`/community/questions/${questionXId}/answers`, { body, image_url: imageUrl }),
   accept: (questionXId: string, answerXId: string) =>
     api.post<null>(`/community/questions/${questionXId}/accept/${answerXId}`),
-  editAnswer: (answerXId: string, body: string) => api.patch<null>(`/community/answers/${answerXId}`, { body }),
+  editAnswer: (answerXId: string, body: string, imageUrl?: string) =>
+    api.patch<null>(`/community/answers/${answerXId}`, { body, image_url: imageUrl ?? null }),
   deleteAnswer: (answerXId: string) => api.delete<null>(`/community/answers/${answerXId}`),
   thank: (answerXId: string) =>
     api.post<{ thanks_count: number; thanked: boolean }>(`/community/answers/${answerXId}/thanks`),

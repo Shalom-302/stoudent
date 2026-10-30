@@ -64,6 +64,8 @@ class Answer(Base):
     question_id: Mapped[int] = mapped_column(sa.ForeignKey('question.id', ondelete='CASCADE'), index=True)
     author_id: Mapped[int] = mapped_column(sa.ForeignKey('user.id', ondelete='CASCADE'), index=True)
     body: Mapped[str] = mapped_column(sa.Text)
+    # Optional photo of a handwritten solution, same rules as the question's.
+    image_url: Mapped[str | None] = mapped_column(sa.String(500), default=None)
     score: Mapped[int] = mapped_column(sa.Integer, init=False, default=0, server_default='0')
     is_accepted: Mapped[bool] = mapped_column(sa.Boolean, init=False, default=False, server_default='0')
     # A verified teacher vouched for this answer.

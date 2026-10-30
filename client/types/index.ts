@@ -446,6 +446,7 @@ export interface Likes {
 export interface AnswerPreview extends Likes {
   x_id: string;
   excerpt: string;
+  image_url: string | null;
   score: number;
   is_accepted: boolean;
   teacher_endorsed: boolean;

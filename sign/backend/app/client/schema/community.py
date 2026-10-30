@@ -27,24 +27,24 @@ def _clean_tags(tags: list[str]) -> list[str]:
     return seen
 
 
+def _own_upload(v: str | None) -> str | None:
+    """Only a photo uploaded through /community/uploads: no third-party URL
+    (tracking pixels, hotlinked content) ever reaches the page."""
+    if v and not URL_RE.match(v):
+        raise ValueError('Photo invalide : envoyez-la depuis le formulaire.')
+    return v or None
+
+
 class CreateQuestionParam(SchemaBase):
     title: str = Field(min_length=10, max_length=200)
     body: str = Field(min_length=20, max_length=20_000)
     filiere: str = Field(min_length=2, max_length=100)
     subject: str | None = Field(default=None, max_length=100)
     tags: list[str] = Field(default_factory=list)
-    # Only a photo uploaded through /community/uploads: no third-party URL
-    # (tracking pixels, hotlinked content) ever reaches the page.
     image_url: str | None = None
 
     _tags = field_validator('tags')(_clean_tags)
-
-    @field_validator('image_url')
-    @classmethod
-    def _own_upload(cls, v: str | None) -> str | None:
-        if v and not URL_RE.match(v):
-            raise ValueError('Photo invalide : envoyez-la depuis le formulaire.')
-        return v or None
+    _image = field_validator('image_url')(_own_upload)
 
     @field_validator('title', 'body', 'filiere')
     @classmethod
@@ -59,6 +59,9 @@ class CreateQuestionParam(SchemaBase):
 
 class CreateAnswerParam(SchemaBase):
     body: str = Field(min_length=20, max_length=20_000)
+    image_url: str | None = None
+
+    _image = field_validator('image_url')(_own_upload)
 
 
 class CreateCommentParam(SchemaBase):
@@ -128,6 +131,7 @@ class AnswerPreview(SchemaBase):
 
     x_id: str
     excerpt: str
+    image_url: str | None = None
     score: int
     is_accepted: bool
     teacher_endorsed: bool

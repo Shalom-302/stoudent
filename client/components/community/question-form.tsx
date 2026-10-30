@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import { communityService, type AskPayload } from '@/services/community';
 import { studentService } from '@/services/student';
 
@@ -24,10 +25,6 @@ function useDebounced<T>(value: T, delay = 400): T {
   return debounced;
 }
 
-/**
- * Ask a question, or edit one (``initial`` given). The photo is uploaded as
- * soon as it is picked, so publishing only sends the URL the API returned.
- */
 /** How to write code and formulas; shared by the question and answer forms. */
 export function FormattingHint() {
   return (
@@ -38,6 +35,86 @@ export function FormattingHint() {
   );
 }
 
+/**
+ * Photo of an exercise or of a handwritten solution. Uploaded as soon as it
+ * is picked (re-encoded, GPS removed server-side), so publishing only sends
+ * the URL the API returned. ``compact`` is the small button of answer forms.
+ */
+export function PhotoPicker({
+  value,
+  onChange,
+  onUploading,
+  compact,
+}: {
+  value: string | undefined;
+  onChange: (url: string | undefined) => void;
+  onUploading?: (uploading: boolean) => void;
+  compact?: boolean;
+}) {
+  const [uploading, setUploading] = React.useState(false);
+  const fileInput = React.useRef<HTMLInputElement>(null);
+
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) return toast.error(`Photo trop lourde (${MAX_PHOTO_MB} Mo maximum).`);
+    setUploading(true);
+    onUploading?.(true);
+    try {
+      const { image_url } = await communityService.uploadImage(file);
+      onChange(image_url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Envoi de la photo impossible.');
+    } finally {
+      setUploading(false);
+      onUploading?.(false);
+      if (fileInput.current) fileInput.current.value = '';
+    }
+  };
+
+  if (value) {
+    return (
+      <div className="relative inline-block">
+        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin upload */}
+        <img
+          src={value}
+          alt="Photo jointe"
+          className={cn('rounded-xl border border-ink-200 object-contain', compact ? 'max-h-32' : 'max-h-56')}
+        />
+        <button
+          type="button"
+          onClick={() => onChange(undefined)}
+          aria-label="Retirer la photo"
+          className="absolute -right-2 -top-2 grid h-7 w-7 place-items-center rounded-full bg-ink-900 text-white shadow"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+  return (
+    <label
+      className={cn(
+        'cursor-pointer items-center justify-center gap-2 text-sm text-ink-600 transition hover:border-ink-900 hover:text-ink-900',
+        compact
+          ? 'inline-flex rounded-full border border-ink-200 px-3 py-1.5 font-medium'
+          : 'flex rounded-xl border border-dashed border-ink-300 px-4 py-6',
+      )}
+    >
+      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className={compact ? 'h-4 w-4' : 'h-5 w-5'} />}
+      {uploading ? 'Envoi de la photo…' : compact ? 'Ajouter une photo' : 'Prendre ou choisir une photo'}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        disabled={uploading}
+        onChange={(e) => void pick(e.target.files?.[0])}
+      />
+    </label>
+  );
+}
+
+/** Ask a question, or edit one (``initial`` given). */
 export function QuestionForm({
   initial,
   defaults,
@@ -66,7 +143,6 @@ export function QuestionForm({
   const [imageUrl, setImageUrl] = React.useState<string | undefined>(initial?.image_url);
   const [uploading, setUploading] = React.useState(false);
   const [pending, setPending] = React.useState(false);
-  const fileInput = React.useRef<HTMLInputElement>(null);
 
   // Default to the member's own filière once the profile arrives.
   React.useEffect(() => {
@@ -85,21 +161,6 @@ export function QuestionForm({
     .split(/[,\s]+/)
     .map((t) => t.replace(/^#/, '').trim())
     .filter(Boolean);
-
-  const pickPhoto = async (file: File | undefined) => {
-    if (!file) return;
-    if (file.size > MAX_PHOTO_MB * 1024 * 1024) return toast.error(`Photo trop lourde (${MAX_PHOTO_MB} Mo maximum).`);
-    setUploading(true);
-    try {
-      const { image_url } = await communityService.uploadImage(file);
-      setImageUrl(image_url);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Envoi de la photo impossible.');
-    } finally {
-      setUploading(false);
-      if (fileInput.current) fileInput.current.value = '';
-    }
-  };
 
   const problems = [
     title.trim().length < 10 && 'Le titre doit faire au moins 10 caractères.',
@@ -175,35 +236,7 @@ export function QuestionForm({
         <span className="text-sm font-medium text-ink-900">
           Photo de l’exercice <span className="font-normal text-ink-400">(facultatif)</span>
         </span>
-        {imageUrl ? (
-          <div className="relative inline-block">
-            {/* eslint-disable-next-line @next/next/no-img-element -- same-origin upload */}
-            <img src={imageUrl} alt="Photo jointe" className="max-h-56 rounded-xl border border-ink-200 object-contain" />
-            <button
-              type="button"
-              onClick={() => setImageUrl(undefined)}
-              aria-label="Retirer la photo"
-              className="absolute -right-2 -top-2 grid h-7 w-7 place-items-center rounded-full bg-ink-900 text-white shadow"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          <label
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-ink-300 px-4 py-6 text-sm text-ink-600 transition hover:border-ink-900 hover:text-ink-900"
-          >
-            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            {uploading ? 'Envoi de la photo…' : 'Prendre ou choisir une photo'}
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              disabled={uploading}
-              onChange={(e) => void pickPhoto(e.target.files?.[0])}
-            />
-          </label>
-        )}
+        <PhotoPicker value={imageUrl} onChange={setImageUrl} onUploading={setUploading} />
         <p className="text-xs text-ink-400">JPEG, PNG ou WebP, {MAX_PHOTO_MB} Mo max. La position GPS de la photo est supprimée.</p>
       </div>
 

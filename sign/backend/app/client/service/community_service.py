@@ -300,6 +300,7 @@ class CommunityService:
         data = {
             'x_id': a.x_id,
             'excerpt': _excerpt(a.body),
+            'image_url': a.image_url,
             'score': a.score,
             'is_accepted': a.is_accepted,
             'teacher_endorsed': a.teacher_endorsed,
@@ -449,7 +450,7 @@ class CommunityService:
     ) -> dict:
         async with async_db_session.begin() as db:
             question = await self._get_question(db, question_x_id, for_update=True)
-            answer = Answer(question_id=question.id, author_id=user_id, body=obj.body.strip())
+            answer = Answer(question_id=question.id, author_id=user_id, body=obj.body.strip(), image_url=obj.image_url)
             db.add(answer)
             question.answer_count += 1
             actor = await db.get(User, user_id)
@@ -543,6 +544,7 @@ class CommunityService:
         async with async_db_session.begin() as db:
             answer = await self._own_answer(db, answer_x_id, user_id)
             answer.body = obj.body.strip()
+            answer.image_url = obj.image_url
             answer.edited_at = timezone.now()
 
     async def delete_answer(self, *, answer_x_id: str, user_id: int) -> None:
