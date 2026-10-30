@@ -1,10 +1,10 @@
 'use client';
 
-import { ArrowLeft, DoorOpen, Eye, Footprints, Keyboard, Zap } from 'lucide-react';
+import { ArrowLeft, DoorOpen, Eye, Keyboard, Zap } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
-import { MovePad } from '@/components/world3d/controls/MovePad';
+import { MovePad, RunToggle } from '@/components/world3d/controls/MovePad';
 import type { PlayerInput } from '@/components/world3d/Player';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -107,23 +107,7 @@ export function LabHud({
           </p>
 
           <div className="pointer-events-auto flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              // Held, not toggled: the same gesture as holding Shift.
-              onPointerDown={() => {
-                input.move.run = true;
-              }}
-              onPointerUp={() => {
-                input.move.run = false;
-              }}
-              onPointerLeave={() => {
-                input.move.run = false;
-              }}
-            >
-              <Footprints className="h-4 w-4" />
-              Courir
-            </Button>
+            <RunToggle input={input} />
 
             <Button
               size="sm"

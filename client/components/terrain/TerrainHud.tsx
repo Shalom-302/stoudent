@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   BookOpen,
   Eye,
-  Footprints,
   Keyboard,
   Map as MapIcon,
   Minus,
@@ -21,7 +20,7 @@ import {
 import Link from 'next/link';
 import * as React from 'react';
 
-import { MovePad } from '@/components/world3d/controls/MovePad';
+import { MovePad, RunToggle } from '@/components/world3d/controls/MovePad';
 import type { PlayerInput, PlayerTracker } from '@/components/world3d/Player';
 import { Button } from '@/components/ui/button';
 import {
@@ -429,22 +428,7 @@ export function TerrainHud({
             <Button variant="outline" size="sm" className="bg-white/90" onClick={() => setMap(true)}>
               <MapIcon className="h-4 w-4" /> Carte
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white/90"
-              onPointerDown={() => {
-                input.move.run = true;
-              }}
-              onPointerUp={() => {
-                input.move.run = false;
-              }}
-              onPointerLeave={() => {
-                input.move.run = false;
-              }}
-            >
-              <Footprints className="h-4 w-4" /> Courir
-            </Button>
+            <RunToggle input={input} />
           </div>
         </div>
       </div>

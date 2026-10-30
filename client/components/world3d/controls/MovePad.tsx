@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 
+import { Footprints } from 'lucide-react';
+
 import type { PlayerInput } from '@/components/world3d/Player';
 import { cn } from '@/lib/utils';
 
@@ -191,5 +193,39 @@ export function LookSurface({ input, disabled, children }: LookSurfaceProps) {
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * "Courir" as a switch, not a hold: on a phone the thumb that taps it is the
+ * one that then drives the stick, so a hold-to-run button stops running the
+ * moment it is released. Shift still runs while held on a keyboard, and the
+ * stick pushed to its rim runs too.
+ */
+export function RunToggle({ input, className }: { input: PlayerInput; className?: string }) {
+  const [running, setRunning] = React.useState(input.move.run);
+  React.useEffect(
+    () => () => {
+      input.move.run = false;
+    },
+    [input],
+  );
+  return (
+    <button
+      type="button"
+      aria-pressed={running}
+      onClick={() => {
+        input.move.run = !running;
+        setRunning(!running);
+      }}
+      className={cn(
+        'inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors',
+        running ? 'border-ink-900 bg-ink-900 text-white' : 'border-ink-200 bg-white/90 text-ink-900 hover:bg-ink-50',
+        className,
+      )}
+    >
+      <Footprints className="h-4 w-4" />
+      {running ? 'Je cours' : 'Courir'}
+    </button>
   );
 }

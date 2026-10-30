@@ -264,7 +264,9 @@ export default function Player<Id extends string = PointId>({
     // either without the two fighting each other.
     let mx = input.move.x;
     let my = input.move.y;
-    const run = input.move.run || keys.current.has('shift');
+    // The on-screen stick pushed to its rim runs, as in most mobile games.
+    const stickFull = Math.hypot(input.move.x, input.move.y) > 0.95;
+    const run = input.move.run || stickFull || keys.current.has('shift');
 
     for (const key of keys.current) {
       if (FORWARD.has(key)) my += 1;
