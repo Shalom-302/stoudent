@@ -1,6 +1,23 @@
 'use client';
 
-import { ArrowLeft, BookOpen, Eye, Footprints, Keyboard, Map as MapIcon, Navigation, Network, Search, Tag, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookOpen,
+  Eye,
+  Footprints,
+  Keyboard,
+  Map as MapIcon,
+  Minus,
+  Navigation,
+  Network,
+  Plane,
+  Plus,
+  Search,
+  Tag,
+  User,
+  X,
+  ZoomIn,
+} from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -31,6 +48,29 @@ const TYPE_COLOR: Record<EquipmentType, string> = {
   chambre: '#fb923c',
   pbo: '#fdba74',
 };
+
+/**
+ * Where the camera orbits for a close look, and from how far: the dishes of a
+ * tower, the panels of a rooftop site, the box on a pole.
+ */
+function closeUp(e: Equipment): { y: number; distance: number } | null {
+  switch (e.type) {
+    case 'fh':
+      return { y: 24, distance: 11 };
+    case 'gsm':
+      return { y: e.y + 4.2, distance: 8 };
+    case 'fh-roof':
+      return { y: e.y + 1.9, distance: 5 };
+    case 'smallcell':
+      return { y: 7.6, distance: 4 };
+    case 'pbo':
+      return { y: 5.2, distance: 3.5 };
+    case 'nro':
+      return { y: 4, distance: 18 };
+    default:
+      return null; // at street level: the normal view already shows it
+  }
+}
 
 /** Drops the avatar at the spot where the equipment is examined, facing it. */
 function goTo(input: PlayerInput, e: Equipment) {
@@ -225,6 +265,39 @@ export function TerrainHud({
 }: TerrainHudProps) {
   const [notebook, setNotebook] = React.useState(false);
   const [map, setMap] = React.useState(false);
+  const [aerial, setAerial] = React.useState(false);
+  // The close-up ends when the student walks (the Player clears input.orbit).
+  const [orbiting, setOrbiting] = React.useState(false);
+  React.useEffect(() => {
+    const id = setInterval(() => setOrbiting(input.orbit !== null), 250);
+    return () => clearInterval(id);
+  }, [input]);
+  const toggleAerial = () => {
+    input.orbit = null;
+    if (aerial) {
+      input.zoomTo = 2.4;
+      input.pitchTo = 0.24;
+    } else {
+      input.zoomTo = 60;
+      input.pitchTo = 1.2;
+    }
+    setAerial(!aerial);
+  };
+  const lookCloser = (e: Equipment) => {
+    const c = closeUp(e);
+    if (!c) return;
+    input.orbit = { x: e.at[0], y: c.y, z: e.at[1] };
+    input.zoomTo = c.distance;
+    input.pitchTo = 0.2;
+    setOrbiting(true);
+    setAerial(false);
+  };
+  const backToStudent = () => {
+    input.orbit = null;
+    input.zoomTo = 2.4;
+    input.pitchTo = 0.24;
+    setOrbiting(false);
+  };
   const here = equipmentById(near);
   const content = here ? SITE_CONTENT[here.type] : null;
   const toggle = 'bg-white/90 aria-pressed:bg-ink-900 aria-pressed:text-white';
@@ -296,20 +369,33 @@ export function TerrainHud({
       )}
 
       {here && content && (
-        <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4">
+        <div
+          className={cn(
+            'absolute inset-x-0 flex justify-center px-4',
+            // Out of the way when the point is to look at the equipment.
+            orbiting || aerial ? 'top-[150px] sm:top-16' : 'top-1/2 -translate-y-1/2',
+          )}
+        >
           <div className="pointer-events-auto max-w-sm rounded-2xl border border-ink-200 bg-white/95 p-3 shadow-lg backdrop-blur">
             <p className="text-sm font-semibold text-ink-900">{here.label}</p>
             <p className="mt-0.5 text-xs text-ink-500">{content.subtitle}</p>
-            <Button
-              size="sm"
-              className="mt-2.5 w-full"
-              onClick={() => {
-                input.interact = true;
-              }}
-            >
-              <Search className="h-4 w-4" /> Examiner
-              <kbd className="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold">E</kbd>
-            </Button>
+            <div className="mt-2.5 flex gap-2">
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={() => {
+                  input.interact = true;
+                }}
+              >
+                <Search className="h-4 w-4" /> Examiner
+                <kbd className="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold">E</kbd>
+              </Button>
+              {closeUp(here) && !orbiting && (
+                <Button size="sm" variant="outline" onClick={() => lookCloser(here)}>
+                  <ZoomIn className="h-4 w-4" /> Voir de près
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -319,8 +405,26 @@ export function TerrainHud({
         <div className="flex flex-col items-end gap-2">
           <p className="pointer-events-none hidden items-center gap-2 rounded-full bg-ink-900/85 px-3 py-1.5 text-[11px] text-white lg:flex">
             <Keyboard className="h-3.5 w-3.5" />
-            ZQSD / flèches · glisser pour regarder · Maj pour courir · E pour examiner · carte pour y aller
+            ZQSD · glisser pour regarder · molette pour zoomer · Maj pour courir · E pour examiner
           </p>
+          <div className="pointer-events-auto flex flex-col items-end gap-2">
+            {orbiting && (
+              <Button size="sm" onClick={backToStudent}>
+                <User className="h-4 w-4" /> Revenir à l’avatar
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" className="h-8 w-8 bg-white/90" aria-label="Rapprocher la caméra" onClick={() => (input.zoom -= 0.35)}>
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-8 w-8 bg-white/90" aria-label="Éloigner la caméra" onClick={() => (input.zoom += 0.35)}>
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={toggleAerial} aria-pressed={aerial} className={toggle}>
+                <Plane className="h-4 w-4" /> <span className="hidden sm:inline">Vue aérienne</span>
+              </Button>
+            </div>
+          </div>
           <div className="pointer-events-auto flex gap-2">
             <Button variant="outline" size="sm" className="bg-white/90" onClick={() => setMap(true)}>
               <MapIcon className="h-4 w-4" /> Carte

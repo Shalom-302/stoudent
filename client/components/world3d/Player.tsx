@@ -60,6 +60,9 @@ export interface PlayerWorld<Id extends string> {
   exit?: [number, number];
   walk?: number;
   run?: number;
+  /** How far the camera may pull back (m) and look down (rad); a room keeps it close. */
+  maxDistance?: number;
+  maxPitch?: number;
   /** Ground height under a point (a sidewalk kerb); flat floor when absent. */
   groundAt?: (x: number, z: number) => number;
 }
@@ -98,10 +101,31 @@ export interface PlayerInput {
   interact: boolean;
   /** Set by a map's "go there": the avatar is dropped at this spot next frame. */
   teleport: { x: number; z: number; heading: number; lookUp?: boolean } | null;
+  /** Zoom accumulated since the last frame, in log units: > 0 pulls the camera back. */
+  zoom: number;
+  /** Absolute camera distance requested by a button (aerial view, close-up). */
+  zoomTo: number | null;
+  /** Absolute camera pitch requested by a button (radians, clamped). */
+  pitchTo: number | null;
+  /**
+   * Orbit this point instead of the avatar: a close look at the top of a
+   * tower. Walking cancels it.
+   */
+  orbit: { x: number; y: number; z: number } | null;
 }
 
 export function createPlayerInput(): PlayerInput {
-  return { move: { x: 0, y: 0, run: false }, lookYaw: 0, lookPitch: 0, interact: false, teleport: null };
+  return {
+    move: { x: 0, y: 0, run: false },
+    lookYaw: 0,
+    lookPitch: 0,
+    interact: false,
+    teleport: null,
+    zoom: 0,
+    zoomTo: null,
+    pitchTo: null,
+    orbit: null,
+  };
 }
 
 export interface PlayerAppearance {
@@ -160,6 +184,7 @@ export default function Player<Id extends string = PointId>({
     heading: start.rotation,
     cameraYaw: start.rotation,
     cameraPitch: 0.24,
+    distance: CAM.distance,
     lastSave: 0,
   });
   const speedRef = useRef(0);
@@ -217,10 +242,22 @@ export default function Player<Id extends string = PointId>({
     s.cameraPitch = THREE.MathUtils.clamp(
       s.cameraPitch + input.lookPitch,
       CAM.minPitch,
-      CAM.maxPitch,
+      world.maxPitch ?? CAM.maxPitch,
     );
     input.lookYaw = 0;
     input.lookPitch = 0;
+
+    // -- Zoom ---------------------------------------------------------------
+    if (input.zoomTo !== null) {
+      s.distance = input.zoomTo;
+      input.zoomTo = null;
+    }
+    if (input.pitchTo !== null) {
+      s.cameraPitch = THREE.MathUtils.clamp(input.pitchTo, CAM.minPitch, world.maxPitch ?? CAM.maxPitch);
+      input.pitchTo = null;
+    }
+    s.distance = THREE.MathUtils.clamp(s.distance * Math.exp(input.zoom), 1.6, world.maxDistance ?? 4);
+    input.zoom = 0;
 
     // -- Movement request ---------------------------------------------------
     // Keyboard and pad write into the same vector, so a student can drive with
@@ -245,6 +282,8 @@ export default function Player<Id extends string = PointId>({
     const magnitude = Math.min(Math.hypot(mx, my), 1);
 
     if (magnitude > 0.02) {
+      // Walking brings the camera back to the student.
+      input.orbit = null;
       // Move relative to where the camera looks: pressing "forward" goes where
       // the student is looking, which is what every third-person game does.
       // forward = (-sin, 0, cos); screen-right = cross(forward, up)
@@ -340,16 +379,26 @@ export default function Player<Id extends string = PointId>({
       // (-sin(yaw), 0, +cos(yaw)), so behind the avatar is
       // (+sin(yaw), 0, -cos(yaw)): getting the z sign wrong puts the camera in
       // front and the student walks into their own face.
-      const horizontal = CAM.distance * Math.cos(s.cameraPitch);
-      camWanted.set(
-        s.position.x + Math.sin(s.cameraYaw) * horizontal,
-        s.position.y + CAM.height + CAM.distance * Math.sin(s.cameraPitch),
-        s.position.z - Math.cos(s.cameraYaw) * horizontal,
-      );
+      const horizontal = s.distance * Math.cos(s.cameraPitch);
+      const orbit = input.orbit;
+      if (orbit) {
+        camWanted.set(
+          orbit.x + Math.sin(s.cameraYaw) * horizontal,
+          orbit.y + s.distance * Math.sin(s.cameraPitch),
+          orbit.z - Math.cos(s.cameraYaw) * horizontal,
+        );
+      } else {
+        camWanted.set(
+          s.position.x + Math.sin(s.cameraYaw) * horizontal,
+          s.position.y + CAM.height + s.distance * Math.sin(s.cameraPitch),
+          s.position.z - Math.cos(s.cameraYaw) * horizontal,
+        );
+      }
       // Pull the camera in when it would sit inside a wall or a cabinet: walk
-      // the ray back towards the player and keep the last free sample.
+      // the ray back towards the player and keep the last free sample. High
+      // up (an aerial view, a close look at a tower) there is nothing to hit.
       camPulled.copy(camWanted);
-      if (blocked(camWanted.x, camWanted.z)) {
+      if (!orbit && camWanted.y < 6 && blocked(camWanted.x, camWanted.z)) {
         for (let t = 0.85; t >= 0.15; t -= 0.1) {
           const x = s.position.x + (camWanted.x - s.position.x) * t;
           const z = s.position.z + (camWanted.z - s.position.z) * t;
@@ -365,7 +414,8 @@ export default function Player<Id extends string = PointId>({
         }
       }
       camera.position.lerp(camPulled, 1 - Math.pow(0.0001, dt));
-      camTarget.set(s.position.x, s.position.y + CAM.lookHeight, s.position.z);
+      if (orbit) camTarget.set(orbit.x, orbit.y, orbit.z);
+      else camTarget.set(s.position.x, s.position.y + CAM.lookHeight, s.position.z);
       camera.lookAt(camTarget);
 
       // A wall can squeeze the rig right up against the student's back. Hiding

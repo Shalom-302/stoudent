@@ -23,7 +23,22 @@ const WORLD: PlayerWorld<string> = {
   // Streets are longer than a room: walking pace stays human, running is brisk.
   walk: 2.4,
   run: 6,
+  // Pull back over the rooftops and look straight down at the district.
+  maxDistance: 75,
+  maxPitch: 1.45,
 };
+
+/** Push the haze back as the camera climbs, or an aerial view is all fog. */
+function HazeFollowsCamera({ tracker }: { tracker: PlayerTracker }) {
+  useFrame(({ camera, scene }) => {
+    const fog = scene.fog as THREE.Fog | null;
+    if (!fog) return;
+    const d = Math.hypot(camera.position.x - tracker.x, camera.position.y, camera.position.z - tracker.z);
+    fog.near = 55 + d * 0.8;
+    fog.far = 190 + d * 1.6;
+  });
+  return null;
+}
 
 /**
  * The sun, its shadow box centred on the student: a 2048 px map over 80 m
@@ -45,10 +60,10 @@ function Sun({ tracker }: { tracker: PlayerTracker }) {
       color="#fff1d8"
       castShadow
       shadow-mapSize={[2048, 2048]}
-      shadow-camera-left={-40}
-      shadow-camera-right={40}
-      shadow-camera-top={40}
-      shadow-camera-bottom={-40}
+      shadow-camera-left={-55}
+      shadow-camera-right={55}
+      shadow-camera-top={55}
+      shadow-camera-bottom={-55}
       shadow-camera-near={10}
       shadow-camera-far={200}
       shadow-bias={-0.0004}
@@ -122,6 +137,7 @@ export default function TerrainScene({
         <Sky distance={380} sunPosition={[SUN.x, SUN.y, SUN.z]} turbidity={9} rayleigh={1.6} mieCoefficient={0.008} mieDirectionalG={0.82} />
         <hemisphereLight args={['#d9e6ef', '#8a6a48', 0.85]} />
         <Sun tracker={tracker} />
+        <HazeFollowsCamera tracker={tracker} />
         <Ground />
         <Streets />
         <Buildings />

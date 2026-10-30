@@ -296,7 +296,7 @@ Tous reproductibles, lancés avant chaque push :
 | API communauté | inscription, questions, réponses, votes, réputation, signalements | 34/34 |
 | API photo des réponses | envoi, URL étrangère refusée, fil et page question, modification qui retire la photo | 7/7 |
 | API Labo Terrain | affaiblissement en espace libre, rayon de Fresnel, renflement terrestre, gain d'une parabole, +6 dB pour une distance doublée, obstacle qui coupe la liaison et hauteur suggérée, budget GPON, limite de 128 abonnés par port, bornes refusées | 20/20 |
-| Navigateur, Labo Terrain | page Laboratoires, scène, marche jusqu'au PBO, mission fibre réussie, quiz, carnet ; carte et « Y aller » au pylône FH, mission FH ; téléphone 390 px ; salle de TP inchangée (marche jusqu'au poste D, TP ouvert) | 13/13 + salle OK, 0 erreur console |
+| Navigateur, Labo Terrain | page Laboratoires, scène, marche jusqu'au PBO, mission fibre réussie, quiz, carnet ; carte et « Y aller » au pylône FH, mission FH ; téléphone 390 px ; salle de TP inchangée (marche jusqu'au poste D, TP ouvert) | 15/15 (+ vue de près, vue aérienne, molette) + salle OK, 0 erreur console |
 | API fil social (V2.0) | qui a aimé (3 noms, total, 👎 anonymes), meilleure réponse dans le fil, partages dédoublonnés, commentaires (droits, notifications, signalement, compteurs), suppression d'une réponse commentée | 39/39 |
 | Navigateur, fil social | visiteur et membre, ordinateur et téléphone 390 px : aimer, voir qui a aimé, commenter, répondre et partager depuis le fil, page question | 15/15, 0 erreur console |
 | API bibliothèque | programme officiel (33 filières, épreuves, coefficients), rayons par épreuve et rayons partagés, anciens codes, facettes, recherche, visites, propositions, validation admin, signalement droits d'auteur | 30/30 |
@@ -446,6 +446,11 @@ sur notre stack (React Three Fiber, même `Player` que la salle).
 - **Carte** : la mini-carte s'ouvre en plein écran (tous les équipements par
   type, la fibre, les liaisons) ; **« Y aller »** dépose l'avatar devant
   l'équipement, caméra tournée vers le haut pour ce qui est en hauteur.
+- **Caméra** : zoom à la molette, au pincement à deux doigts ou avec + / − (de
+  1,6 à 75 m) ; **vue aérienne** d'un bouton (caméra plongeante sur le quartier,
+  brume repoussée) ; **« Voir de près »** sur les équipements en hauteur : la
+  caméra tourne autour des paraboles du pylône, des panneaux d'un relais, du
+  boîtier d'un PBO. Marcher ramène la caméra sur l'avatar.
 - **8 types de fiches** (`client/lib/terrain/sites.ts`) : ce que tu vois,
   chiffres clés, quiz corrigé, « Demande à la communauté ». Le carnet compte les
   types vus et maîtrisés (gardé sur l'appareil pour l'instant).

@@ -130,17 +130,46 @@ interface LookSurfaceProps {
 export function LookSurface({ input, disabled, children }: LookSurfaceProps) {
   const dragging = React.useRef<number | null>(null);
   const last = React.useRef({ x: 0, y: 0 });
+  // Every finger on the surface, for the two-finger pinch.
+  const fingers = React.useRef(new Map<number, { x: number; y: number }>());
+  const pinch = React.useRef<number | null>(null);
+  const spread = () => {
+    const [a, b] = [...fingers.current.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
 
   return (
     <div
       className="absolute inset-0 touch-none"
+      onWheel={(event) => {
+        if (disabled) return;
+        // Wheel down pulls the camera back, like a map.
+        input.zoom += event.deltaY * 0.0015;
+      }}
       onPointerDown={(event) => {
         if (disabled || event.button !== 0) return;
+        fingers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        event.currentTarget.setPointerCapture(event.pointerId);
+        if (fingers.current.size === 2) {
+          // Second finger: stop looking, start pinching.
+          dragging.current = null;
+          pinch.current = spread();
+          return;
+        }
         dragging.current = event.pointerId;
         last.current = { x: event.clientX, y: event.clientY };
-        event.currentTarget.setPointerCapture(event.pointerId);
       }}
       onPointerMove={(event) => {
+        if (fingers.current.has(event.pointerId)) {
+          fingers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        }
+        if (pinch.current !== null && fingers.current.size === 2) {
+          const now = spread();
+          // Fingers apart = closer, together = further, as on a photo.
+          if (now > 0 && pinch.current > 0) input.zoom += Math.log(pinch.current / now);
+          pinch.current = now;
+          return;
+        }
         if (dragging.current !== event.pointerId) return;
         const dx = event.clientX - last.current.x;
         const dy = event.clientY - last.current.y;
@@ -150,9 +179,13 @@ export function LookSurface({ input, disabled, children }: LookSurfaceProps) {
         input.lookPitch += dy * 0.004;
       }}
       onPointerUp={(event) => {
+        fingers.current.delete(event.pointerId);
+        if (fingers.current.size < 2) pinch.current = null;
         if (dragging.current === event.pointerId) dragging.current = null;
       }}
-      onPointerCancel={() => {
+      onPointerCancel={(event) => {
+        fingers.current.delete(event.pointerId);
+        pinch.current = null;
         dragging.current = null;
       }}
     >
