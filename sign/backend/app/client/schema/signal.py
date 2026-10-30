@@ -4,6 +4,8 @@ Every bound here is a denial-of-service control as much as a physics one: the
 computation runs in the API worker, so ``duration * sample_rate`` is the single
 number that decides how much CPU and memory one request can claim.
 """
+from typing import Literal
+
 from pydantic import Field, field_validator, model_validator
 from typing_extensions import Self
 
@@ -192,3 +194,33 @@ class LaplaceParam(SchemaBase):
     capacitance: float = Field(default=1e-6, gt=0, le=1.0)
     duration: float | None = Field(default=None, gt=0, le=100.0)
     with_inverse: bool = True
+
+
+# -- Labo Terrain: link budgets -------------------------------------------------
+
+
+class MicrowaveLinkParam(SchemaBase):
+    """A point-to-point microwave link between two towers (faisceau hertzien)."""
+
+    frequency_ghz: float = Field(default=15.0, ge=1.0, le=90.0)
+    distance_km: float = Field(default=10.0, gt=0.05, le=100.0)
+    tx_power_dbm: float = Field(default=20.0, ge=-10.0, le=40.0)
+    dish_diameter_m: float = Field(default=0.6, ge=0.2, le=4.0)
+    losses_db: float = Field(default=3.0, ge=0.0, le=30.0, description='Feeders, branching, radome')
+    sensitivity_dbm: float = Field(default=-80.0, ge=-120.0, le=-30.0)
+    height_a_m: float = Field(default=30.0, ge=2.0, le=150.0)
+    height_b_m: float = Field(default=30.0, ge=2.0, le=150.0)
+    obstacle_height_m: float = Field(default=24.0, ge=0.0, le=200.0)
+    obstacle_at_km: float | None = Field(default=None, gt=0.0, le=100.0)
+
+
+class FibreDropParam(SchemaBase):
+    """GPON optical budget from the central office to a subscriber."""
+
+    length_km: float = Field(default=3.0, gt=0.0, le=60.0)
+    wavelength_nm: Literal[1310, 1490, 1550] = 1490
+    splices: int = Field(default=4, ge=0, le=60)
+    connectors: int = Field(default=4, ge=0, le=20)
+    splitters: list[Literal[2, 4, 8, 16, 32, 64]] = Field(default_factory=lambda: [8, 8], max_length=3)
+    olt_power_dbm: float = Field(default=3.0, ge=-5.0, le=10.0)
+    onu_sensitivity_dbm: float = Field(default=-28.0, ge=-40.0, le=-10.0)

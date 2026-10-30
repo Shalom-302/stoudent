@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Library,
   LogOut,
+  MapPin,
   Menu,
   MessageCircleQuestion,
   Shield,
@@ -40,6 +41,7 @@ const LAB_NAV: NavItem[] = [
   { href: '/dashboard', label: 'MyLab', icon: LayoutDashboard },
   { href: '/world', label: 'Monde 3D', icon: Boxes },
   { href: '/labs', label: 'Laboratoires', icon: FlaskConical },
+  { href: '/terrain', label: 'Labo Terrain', icon: MapPin },
   { href: '/progress', label: 'Progression', icon: TrendingUp },
   { href: '/achievements', label: 'Badges', icon: Award },
 ];

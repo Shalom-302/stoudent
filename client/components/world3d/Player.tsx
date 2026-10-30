@@ -38,12 +38,46 @@ const BACK = new Set(['s', 'arrowdown']);
 const LEFT = new Set(['a', 'q', 'arrowleft']);
 const RIGHT = new Set(['d', 'arrowright']);
 
-function blocked(x: number, z: number): boolean {
+function blockedInRoom(x: number, z: number): boolean {
   if (x < BOUNDS.minX + RADIUS || x > BOUNDS.maxX - RADIUS) return true;
   if (z < BOUNDS.minZ + RADIUS || z > BOUNDS.maxZ - RADIUS) return true;
   return COLLIDERS.some(
     (c) => x > c.minX - RADIUS && x < c.maxX + RADIUS && z > c.minZ - RADIUS && z < c.maxZ + RADIUS,
   );
+}
+
+/**
+ * Where the avatar can walk and what it can use. The lab room is the default;
+ * the Labo Terrain passes its streets, buildings and telecom sites.
+ */
+export interface PlayerWorld<Id extends string> {
+  /** True when a body of radius RADIUS cannot stand at (x, z). */
+  blocked: (x: number, z: number) => boolean;
+  /** Where the student stands to use something. */
+  points: { id: Id; x: number; z: number }[];
+  detectionRadius: number;
+  /** Door hotspot: E there calls onExit. */
+  exit?: [number, number];
+  walk?: number;
+  run?: number;
+}
+
+const ROOM: PlayerWorld<PointId> = {
+  blocked: blockedInRoom,
+  points: LAB_POINTS.map((point) => ({
+    id: point.id,
+    x: point.anchors.interactionPoint[0],
+    z: point.anchors.interactionPoint[2],
+  })),
+  detectionRadius: INTERACTION.detectionRadius,
+  exit: EXIT_POINT,
+};
+
+/** Written every frame for overlays that follow the avatar (a mini-map). */
+export interface PlayerTracker {
+  x: number;
+  z: number;
+  heading: number;
 }
 
 /** Movement request, in camera space: x = strafe, y = forward. Length <= 1. */
@@ -72,8 +106,11 @@ export interface PlayerAppearance {
   hair?: string;
 }
 
-interface PlayerProps {
+interface PlayerProps<Id extends string> {
   input: PlayerInput;
+  /** Defaults to the lab room. */
+  world?: PlayerWorld<Id>;
+  tracker?: PlayerTracker;
   view: 'third' | 'first';
   /**
    * Bench the student is currently working at.
@@ -81,20 +118,22 @@ interface PlayerProps {
    * Set, the camera walks up to the instrument and holds a reading pose: the
    * TP happens in the room, not on another page.
    */
-  focus: PointId | null;
+  focus: Id | null;
   /** Frozen while a panel is open. */
   locked: boolean;
   start: { x: number; z: number; rotation: number };
   appearance?: PlayerAppearance;
-  near: PointId | null;
-  onNear: (id: PointId | null) => void;
-  onInteract: (id: PointId) => void;
+  near: Id | null;
+  onNear: (id: Id | null) => void;
+  onInteract: (id: Id) => void;
   onExit: () => void;
   onMove: (transform: { x: number; z: number; rotation: number }) => void;
 }
 
-export default function Player({
+export default function Player<Id extends string = PointId>({
   input,
+  world = ROOM as unknown as PlayerWorld<Id>,
+  tracker,
   view,
   focus,
   locked,
@@ -105,7 +144,8 @@ export default function Player({
   onInteract,
   onExit,
   onMove,
-}: PlayerProps) {
+}: PlayerProps<Id>) {
+  const blocked = world.blocked;
   const { camera } = useThree();
   const body = useRef<THREE.Group>(null);
 
@@ -200,7 +240,8 @@ export default function Player({
       const sin = Math.sin(s.cameraYaw);
       desired.set(-mx * cos - my * sin, 0, -mx * sin + my * cos).normalize();
 
-      const step = magnitude * (run ? RUN : WALK) * dt;
+      const speed = run ? (world.run ?? RUN) : (world.walk ?? WALK);
+      const step = magnitude * speed * dt;
       const nx = s.position.x + desired.x * step;
       const nz = s.position.z + desired.z * step;
       // Axis-separated so sliding along a wall still works.
@@ -213,7 +254,7 @@ export default function Player({
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
       s.heading += diff * Math.min(TURN_RATE * dt, 1);
-      speedRef.current = magnitude * (run ? RUN : WALK);
+      speedRef.current = magnitude * speed;
     } else {
       speedRef.current += (0 - speedRef.current) * Math.min(dt * 10, 1);
       if (speedRef.current < 0.02) speedRef.current = 0;
@@ -224,10 +265,16 @@ export default function Player({
       body.current.rotation.y = s.heading;
       body.current.visible = view === 'third';
     }
+    if (tracker) {
+      tracker.x = s.position.x;
+      tracker.z = s.position.z;
+      tracker.heading = s.heading;
+    }
 
 
     // -- Camera -------------------------------------------------------------
-    const focused = pointById(focus);
+    // Only the lab room has benches to walk up to.
+    const focused = world === (ROOM as unknown) ? pointById(focus as PointId | null) : undefined;
     if (focused) {
       // Slide up to the instrument and hold the reading pose. The avatar is
       // parked on the interaction point, which is where the spec says a
@@ -314,12 +361,10 @@ export default function Player({
     }
 
     // -- Proximity ----------------------------------------------------------
-    let found: PointId | null = null;
-    // Annotated: detectionRadius is a literal 1 in the `as const` spec.
-    let best: number = INTERACTION.detectionRadius;
-    for (const point of LAB_POINTS) {
-      const [px, , pz] = point.anchors.interactionPoint;
-      const distance = Math.hypot(s.position.x - px, s.position.z - pz);
+    let found: Id | null = null;
+    let best = world.detectionRadius;
+    for (const point of world.points) {
+      const distance = Math.hypot(s.position.x - point.x, s.position.z - point.z);
       if (distance < best) {
         best = distance;
         found = point.id;
@@ -331,7 +376,7 @@ export default function Player({
     if (input.interact) {
       input.interact = false;
       if (found) onInteract(found);
-      else if (Math.hypot(s.position.x - EXIT_POINT[0], s.position.z - EXIT_POINT[1]) < 1.4) {
+      else if (world.exit && Math.hypot(s.position.x - world.exit[0], s.position.z - world.exit[1]) < 1.4) {
         onExit();
       }
     }

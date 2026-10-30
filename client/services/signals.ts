@@ -110,4 +110,63 @@ export const signalService = {
     duration?: number | null;
     with_inverse?: boolean;
   }) => api.post<LaplaceResult>('/signals/laplace', payload),
+
+  /** Labo Terrain: microwave link budget and Fresnel clearance between two towers. */
+  microwaveLink: (payload: Partial<MicrowaveLinkInput>) =>
+    api.post<MicrowaveLinkResult>('/signals/microwave-link', payload),
+  /** Labo Terrain: GPON optical budget from the central office to the subscriber. */
+  fibreDrop: (payload: Partial<FibreDropInput>) => api.post<FibreDropResult>('/signals/fibre-drop', payload),
 };
+
+export interface MicrowaveLinkInput {
+  frequency_ghz: number;
+  distance_km: number;
+  tx_power_dbm: number;
+  dish_diameter_m: number;
+  losses_db: number;
+  sensitivity_dbm: number;
+  height_a_m: number;
+  height_b_m: number;
+  obstacle_height_m: number;
+}
+
+export interface MicrowaveLinkResult {
+  free_space_loss_db: number;
+  dish_gain_dbi: number;
+  received_dbm: number;
+  fade_margin_db: number;
+  fresnel_radius_m: number;
+  earth_bulge_m: number;
+  line_of_sight_m: number;
+  clearance_m: number;
+  clearance_ratio: number;
+  fresnel_clear: boolean;
+  raise_towers_by_m: number;
+  link_up: boolean;
+  verdict: string;
+}
+
+export interface FibreDropInput {
+  length_km: number;
+  wavelength_nm: 1310 | 1490 | 1550;
+  splices: number;
+  connectors: number;
+  splitters: number[];
+  olt_power_dbm: number;
+  onu_sensitivity_dbm: number;
+}
+
+export interface FibreDropResult {
+  attenuation_db_per_km: number;
+  fibre_loss_db: number;
+  splice_loss_db: number;
+  connector_loss_db: number;
+  splitter_loss_db: number;
+  total_loss_db: number;
+  received_dbm: number;
+  margin_db: number;
+  subscribers_per_port: number;
+  split_ok: boolean;
+  link_up: boolean;
+  verdict: string;
+}

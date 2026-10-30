@@ -10,11 +10,13 @@ from fastapi_limiter.depends import RateLimiter
 
 from backend.app.client.schema.signal import (
     ConvolutionParam,
+    FibreDropParam,
     FilterParam,
     FourierParam,
     GenerateSignalParam,
     HarmonicsParam,
     LaplaceParam,
+    MicrowaveLinkParam,
     ReconstructParam,
     SamplingParam,
 )
@@ -25,6 +27,7 @@ from backend.services.convolution_service import convolution_service
 from backend.services.filter_service import filter_service
 from backend.services.fourier_service import fourier_service
 from backend.services.laplace_service import laplace_service
+from backend.services.link_budget_service import link_budget_service
 from backend.services.sampling_service import sampling_service
 from backend.services.signal_service import signal_service
 
@@ -205,4 +208,26 @@ def analyze_laplace(request: Request, obj: LaplaceParam) -> ResponseModel:
         # The parser rejects anything outside the allowed symbol set; surface
         # that as a 400 rather than a 500.
         raise errors.RequestError(msg=str(exc))
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
+    '/microwave-link',
+    summary='Labo Terrain: microwave link budget and Fresnel clearance',
+    dependencies=[DependsJwtAuth, ComputeLimit],
+)
+def microwave_link(request: Request, obj: MicrowaveLinkParam) -> ResponseModel:
+    if obj.obstacle_at_km is not None and obj.obstacle_at_km >= obj.distance_km:
+        raise errors.RequestError(msg='L’obstacle doit se trouver entre les deux pylônes.')
+    data = link_budget_service.microwave_link(**obj.model_dump())
+    return response_base.success(request=request, data=data)
+
+
+@router.post(
+    '/fibre-drop',
+    summary='Labo Terrain: GPON optical budget from the NRO to the subscriber',
+    dependencies=[DependsJwtAuth, ComputeLimit],
+)
+def fibre_drop(request: Request, obj: FibreDropParam) -> ResponseModel:
+    data = link_budget_service.fibre_drop(**obj.model_dump())
     return response_base.success(request=request, data=data)

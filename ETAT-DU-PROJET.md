@@ -23,6 +23,10 @@ officiel de sa filière (épreuves et coefficients du MESRS) et, pour chaque
 source citée). L'équipe annonce les nouveautés par **WhatsApp** depuis
 SignManager, aux seuls membres qui l'ont accepté.
 
+Côté labo, il sort de la salle : le **Labo Terrain** (`/terrain`) est un quartier
+où il découvre les télécoms de la rue (faisceau hertzien, fibre, relais GSM)
+avec des missions calculées par le moteur scientifique.
+
 Le périmètre MVP de la note de concept est couvert, ressources comprises.
 
 ---
@@ -51,6 +55,9 @@ Le périmètre MVP de la note de concept est couvert, ressources comprises.
 - **Commentaires** courts (600 caractères) sous une question ou une réponse :
   pas de vote ni de réputation, notification à l'auteur, suppression par son
   auteur, signalables (masqués après 3 signalements, modération SignManager).
+- **Photo dans les réponses** : une résolution manuscrite se joint à une réponse
+  (depuis le fil ou la page question, modifiable), avec les mêmes règles que la
+  photo d'une question ; elle s'affiche aussi sous la meilleure réponse du fil.
 - **Partages** : chaque appui sur « Partager sur WhatsApp » est compté, une fois
   par membre (ou adresse) et par heure ; WhatsApp ne dit pas si le message part.
 - **Filtres** : filière, matière et tag, recherche plein texte
@@ -287,6 +294,9 @@ Tous reproductibles, lancés avant chaque push :
 | Suite | Contenu | Dernier passage |
 |---|---|---|
 | API communauté | inscription, questions, réponses, votes, réputation, signalements | 34/34 |
+| API photo des réponses | envoi, URL étrangère refusée, fil et page question, modification qui retire la photo | 7/7 |
+| API Labo Terrain | affaiblissement en espace libre, rayon de Fresnel, renflement terrestre, gain d'une parabole, +6 dB pour une distance doublée, obstacle qui coupe la liaison et hauteur suggérée, budget GPON, limite de 128 abonnés par port, bornes refusées | 20/20 |
+| Navigateur, Labo Terrain | page Laboratoires (terrain + 5 filières « en cours de développement »), scène, marche jusqu'au point de concentration, mission fibre réussie, quiz, carnet ; téléphone 390 px ; salle de TP inchangée (marche jusqu'au poste D, TP ouvert) | 11/11 + salle OK, 0 erreur console |
 | API fil social (V2.0) | qui a aimé (3 noms, total, 👎 anonymes), meilleure réponse dans le fil, partages dédoublonnés, commentaires (droits, notifications, signalement, compteurs), suppression d'une réponse commentée | 39/39 |
 | Navigateur, fil social | visiteur et membre, ordinateur et téléphone 390 px : aimer, voir qui a aimé, commenter, répondre et partager depuis le fil, page question | 15/15, 0 erreur console |
 | API bibliothèque | programme officiel (33 filières, épreuves, coefficients), rayons par épreuve et rayons partagés, anciens codes, facettes, recherche, visites, propositions, validation admin, signalement droits d'auteur | 30/30 |
@@ -414,7 +424,34 @@ personne, ZQSD/flèches, manche virtuel, collisions).
 - **La note vient du geste** : 60 à 75 % des points viennent du banc. Un jalon
   atteint reste acquis ; conditions déclaratives, jamais évaluées.
 
-## E. Ce qui reste pour le labo
+## E. Labo Terrain (30 octobre 2026)
+
+Un quartier inventé, « inspiré d'Abidjan », où l'avatar se promène dehors
+(`/terrain`, carte « Dehors » sur la page Laboratoires). L'idée vient du projet
+d'un ami (ville d'Abidjan en three.js) ; **aucun code n'a été repris**, tout est
+écrit sur notre stack (React Three Fiber, même `Player` que la salle).
+
+- **Ville en configuration** (`client/lib/terrain/city.ts`) : rues, immeubles
+  repères (Sigma, Orion), sites télécoms, bâtiments générés avec une graine fixe
+  (le même quartier pour tous), collisions. Ajouter un site = ajouter un objet.
+- **5 sites** (`client/lib/terrain/sites.ts`) : pylône de faisceau hertzien et
+  son pylône B, point de concentration fibre sur poteau, armoire de rue (SRO),
+  chambre de tirage, relais GSM sur toit. Chacun : fiche (ce que tu vois,
+  chiffres clés), quiz corrigé, et « Demande à la communauté » qui préremplit
+  une question RIT.
+- **Missions calculées par l'API** (`sign/backend/services/link_budget_service.py`,
+  `POST /signals/microwave-link` et `/signals/fibre-drop`) : rétablir la liaison
+  FH au-dessus de l'immeuble Sigma avec 20 dB de marge (profil et zone de
+  Fresnel dessinés), raccorder 64 abonnés GPON avec 3 dB de marge. Le faisceau
+  entre les deux pylônes passe au vert ou au rouge selon le dernier calcul.
+- **Carnet de terrain** et mini-carte : sites découverts et maîtrisés (quiz, plus
+  mission s'il y en a une). Le carnet est gardé **sur l'appareil** pour l'instant.
+- **Téléphones** : bâtiments et arbres instanciés (un appel de dessin chacun),
+  résolution plafonnée à 1,5, ombres 1024 px.
+- **Autres filières** : ELT, GBAT, LOG, FCGE, GEC affichées « Labo en cours de
+  développement » sur la page Laboratoires.
+
+## F. Ce qui reste pour le labo
 
 - [ ] Test automatisé de l'ouverture d'un poste dans la salle 3D
 - [ ] Brancher les écrans des instruments de la salle sur l'API (synthèse
@@ -423,6 +460,8 @@ personne, ZQSD/flèches, manche virtuel, collisions).
 - [ ] Publier convolution et Laplace (changement de drapeau)
 - [ ] Labo Télécom (PABX, SIP, VoIP, GSM), labos pour d'autres filières
 - [ ] Assets Blender à la place de la géométrie procédurale (`useGLTF`)
+- [ ] Labo Terrain : carnet enregistré côté serveur (XP, badges), mission
+      relais GSM (azimuts, tilt), circulation et passants
 
 | Sujet | Fichier |
 |---|---|
